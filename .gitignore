@@ -1,0 +1,40 @@
+## --- Базовые артефакты .NET и C# ---
+[Bb]in/
+[Oo]bj/
+[Log]s/
+[Tt]est[搁R]esults/
+
+## --- Специфичные папки компиляции Avalonia (Browser/Wasm/Android) ---
+.avwork/
+.editorconfig.user
+*.apks
+*.apk
+*.aab
+
+## --- Пользовательские и IDE настройки (JetBrains Rider, Visual Studio, VS Code) ---
+.vs/
+.idea/
+*.user
+*.userosscache
+*.sln.docstates
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## --- Файлы операционной системы ---
+.DS_Store
+Thumbs.db
+
+## --- Артефакты пакетов и сборщиков ---
+.paket/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## --- Секреты и конфигурации окружения ---
+*.userprefs
+appsettings.Development.json
+.env
+.env.*
