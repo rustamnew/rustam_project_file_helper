@@ -1,0 +1,379 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FileHelper.ViewModels"
+             xmlns:conv="using:FileHelper.Converters"
+             x:Class="FileHelper.Views.FileHashReaderView"
+             x:DataType="vm:FileHashReaderViewModel">
+
+    <UserControl.Resources>
+        <conv:FileIconConverter x:Key="FileIconConverter" />
+        <conv:ConfirmedFilesColorConverter x:Key="ConfirmedFilesColorConverter" />
+        <conv:PlusOneConverter x:Key="PlusOneConverter" />
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Margin="20">
+
+        <StackPanel Grid.Row="0" Spacing="20" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+
+            <!-- Зона Drag & Drop -->
+            <!-- Background="Transparent" Обязателен -->
+            <Border Name="DropZone1"
+                    BorderBrush="#00a2e8"
+                    BorderThickness="2"
+                    Background="Transparent"
+                    CornerRadius="8"
+                    HorizontalAlignment="Stretch"
+                    DragDrop.AllowDrop="True"
+                    DragDrop.DragOver="OnDragOver"
+                    DragDrop.Drop="OnDrop"
+                    Padding="40">
+
+                <StackPanel HorizontalAlignment="Center" Spacing="16">
+                    <Viewbox Width="64" Height="64">
+                        <Canvas Width="120" Height="120" Background="Transparent">
+                            <!-- Пунктирная рамка -->
+                            <Path Data="M 10 10 L 110 10 L 110 110 L 10 110 Z"
+                                  Stroke="#00a2e8"
+                                  StrokeThickness="4"
+                                  StrokeDashArray="3"/>
+                            <!-- Иконка файла -->
+                            <Path Data="M 30 20 L 30 70 L 80 70 L 80 20 Z"
+                                  Stroke="#00a2e8"
+                                  StrokeThickness="4"
+                                  Fill="Transparent"/>
+                            <Path Data="M 30 60 L 45 40 L 55 50 L 65 35 L 80 60 L 80 70 L 30 70 Z"
+                                  Stroke="#00a2e8"
+                                  StrokeThickness="4"
+                                  Fill="Transparent"/>
+                            <!-- Курсор мыши -->
+                            <Path Data="M 70 75 L 70 95 L 79 87 L 92 100 L 98 94 L 85 80 L 93 73 Z"
+                                  Stroke="#00a2e8"
+                                  StrokeThickness="4"
+                                  Fill="Transparent"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="Перетащите файлы сюда"
+                               FontSize="18"
+                               Foreground="#00a2e8"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Кнопка добавления файлов -->
+            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                <Button Content="Добавить файлы"
+                        Command="{Binding AddFilesCommand}"
+                        Padding="20,10"
+                        FontSize="16"/>
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                    <TextBlock Text="История хеширования"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1"
+                            Content="Обновить"
+                            Command="{Binding RefreshHashHistoryCommand}"
+                            Padding="10,6" />
+                </Grid>
+                <TextBlock Text="{Binding HistoryMessage}" Opacity="0.7" />
+                <ScrollViewer MaxHeight="280"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding HashHistory}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:HashHistoryEntry">
+                                <Border BorderBrush="Gray"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Margin="0,0,0,6">
+                                    <Expander Header="{Binding DateText}">
+                                        <StackPanel Spacing="12" Margin="8">
+                                            <ItemsControl ItemsSource="{Binding Folders}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:HashHistoryFolder">
+                                                        <Expander Header="{Binding FolderPath}">
+                                                            <StackPanel Spacing="6" Margin="8">
+                                                                <TextBlock Text="Файлы папки" FontWeight="SemiBold" />
+                                                                <ItemsControl ItemsSource="{Binding Files}">
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate x:DataType="vm:HashHistoryFile">
+                                                                            <StackPanel Spacing="2" Margin="8,0,0,6">
+                                                                                <TextBlock Text="{Binding FilePath}"
+                                                                                           TextWrapping="Wrap" />
+                                                                                <TextBlock Text="{Binding Hash}"
+                                                                                           FontFamily="Consolas"
+                                                                                           FontSize="11"
+                                                                                           Foreground="#2B7FFF"
+                                                                                           TextWrapping="Wrap" />
+                                                                            </StackPanel>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                            </StackPanel>
+                                                        </Expander>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <StackPanel Spacing="6" IsVisible="{Binding HasFiles}">
+                                                <TextBlock Text="Одиночные файлы" FontWeight="Bold" />
+                                                <ItemsControl ItemsSource="{Binding Files}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:HashHistoryFile">
+                                                            <StackPanel Spacing="2" Margin="8,0,0,6">
+                                                                <TextBlock Text="{Binding FilePath}"
+                                                                           TextWrapping="Wrap" />
+                                                                <TextBlock Text="{Binding Hash}"
+                                                                           FontFamily="Consolas"
+                                                                           FontSize="11"
+                                                                           Foreground="#2B7FFF"
+                                                                           TextWrapping="Wrap" />
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Expander>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+
+            <!-- Список добавленных файлов -->
+            <ItemsControl ItemsSource="{Binding ComparisonFiles}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="8" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ComparisonHashResultFile">
+                        <Border BorderBrush="Gray"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="12">
+                            <Grid ColumnDefinitions="Auto, *, Auto, Auto" ColumnSpacing="12">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding FilePath, Converter={StaticResource FileIconConverter}}"
+                                           VerticalAlignment="Center"
+                                           FontSize="20"/>
+                                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding FileName}"
+                                               FontWeight="Bold"
+                                               TextTrimming="CharacterEllipsis"
+                                               FontSize="14"/>
+                                    <TextBlock Text="{Binding DateText}"
+                                               Opacity="0.7"
+                                               FontSize="12"
+                                               IsVisible="{Binding HasDate}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                    <!-- <Border IsVisible="{Binding IsValid, TargetNullValue=False}"
+                                    Background="LightBlue"
+                                    CornerRadius="8"
+                                    Padding="10">
+                                    <TextBlock Text="✅"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"/>
+                                    </Border>
+
+                                    <Border IsVisible="{Binding !IsValid, TargetNullValue=True}"
+                                    Background="PaleVioletRed"
+                                    CornerRadius="14"
+                                    Padding="10">
+                                    <TextBlock Text="❌"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"/>
+                                    </Border> -->
+
+
+                                    <Grid Width="30" Height="30" IsVisible="{Binding !IsValid, TargetNullValue=True}">
+                                        <!-- Круглая подложка (белый круг с красной обводкой) -->
+                                        <Ellipse Fill="White"
+                                                 Stroke="Red"
+                                                 StrokeThickness="2"/>
+
+                                        <!-- Крестик ровно по центру -->
+                                        <TextBlock Text="✕"
+                                                   Foreground="Red"
+                                                   FontSize="18"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <Grid Width="30" Height="30" IsVisible="{Binding IsValid, TargetNullValue=False}">
+                                        <!-- Круглая подложка (белый круг с красной обводкой) -->
+                                        <Ellipse Fill="White"
+                                                 Stroke="LightGreen"
+                                                 StrokeThickness="2"/>
+
+                                        <!-- Крестик ровно по центру -->
+                                        <TextBlock Text="✓"
+                                                   Foreground="LightGreen"
+                                                   FontSize="18"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+
+
+                                </StackPanel>
+
+                                <Button Grid.Column="3"
+                                        Content="❌"
+                                        Command="{Binding $parent[UserControl].DataContext.RemoveComparisonFileCommand}"
+                                        CommandParameter="{Binding FilePath}"
+                                        Padding="8"
+                                        CornerRadius="4"
+                                        VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Button
+                Content="Показать хеш файла"
+                Command="{Binding ShowFileHashCommand}"
+                Padding="8"
+                CornerRadius="4"
+                HorizontalAlignment="Center"/>
+            <Button
+                Content="Посмотреть файл истории"
+                Command="{Binding ShowFileHashHistoryCommand}"
+                Padding="8"
+                CornerRadius="4"
+                HorizontalAlignment="Center"/>
+            <Button
+                Content="Очистить файл истории"
+                Command="{Binding ClearFileHashHistoryCommand}"
+                Padding="8"
+                CornerRadius="4"
+                HorizontalAlignment="Center"/>
+
+            <StackPanel>
+                <CheckBox IsChecked="{Binding ShowFileFullPath}" Content="Отображать полный путь файлов" />
+
+                <!-- <CheckBox IsChecked="{Binding ShowFileSize}" Content="Отображать размер файлов" /> -->
+
+
+
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled"
+                              Margin="0,10,0,0"
+                              Padding="0,0,0,10"
+                              AllowAutoHide="False">
+
+                    <ItemsControl ItemsSource="{Binding ComparisonResult}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Spacing="8" Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Spacing="10" MinWidth="250" MaxWidth="450">
+                                    <!-- <TextBlock Text="{Binding TotalFiles, StringFormat='Всего файлов: {0}'}" />
+                                    <TextBlock Text="{Binding ProceccedFiles, StringFormat='Обработано: {0}'}" /> -->
+                                    <TextBlock Text="{Binding SingleFiles, StringFormat='Одиночные файлы: {0}'}" />
+                                    <TextBlock Text="{Binding HashMismatch, StringFormat='Несовпадающие хеши: {0}'}" />
+                                    <TextBlock Text="{Binding HashConfirmed, StringFormat='Подтверждено: {0}'}" />
+
+                                    <ItemsControl ItemsSource="{Binding FileList}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Spacing="6" >
+
+                                                    <!-- <SelectableTextBlock TextWrapping="Wrap" Cursor="Hand" Tapped="OnHashItemTapped"> -->
+                                                    <TextBlock TextWrapping="Wrap" Cursor="Hand" PointerPressed="OnHashItemPressed">
+                                                        <Run FontSize="10"
+                                                             Foreground="Gray"
+                                                             Text="{Binding FileHash}" />
+                                                        <LineBreak />
+
+                                                        <Run FontSize="12"
+                                                             Text="{Binding FileName}">
+
+                                                            <Run.Foreground>
+                                                                <MultiBinding Converter="{StaticResource ConfirmedFilesColorConverter}">
+                                                                    <Binding Path="FoundFiles" />
+                                                                    <Binding Path="ConfirmedFiles" />
+                                                                </MultiBinding>
+                                                            </Run.Foreground>
+                                                        </Run>
+                                                        <Run FontSize="12">
+                                                            <Run.Text>
+                                                                <!-- <MultiBinding StringFormat="({0}/{1})">
+                                                                <Binding Path="FoundFiles" />
+                                                                <Binding Path="ConfirmedFiles" />
+                                                                </MultiBinding> -->
+                                                                <MultiBinding StringFormat="({0}/{1})">
+                                                                    <!-- Конвертер изменит FoundFiles перед отправкой в StringFormat -->
+                                                                    <Binding Path="FoundFiles" Converter="{StaticResource PlusOneConverter}" />
+                                                                    <!-- Конвертер изменит ConfirmedFiles перед отправкой в StringFormat -->
+                                                                    <Binding Path="ConfirmedFiles" Converter="{StaticResource PlusOneConverter}" />
+                                                                </MultiBinding>
+                                                            </Run.Text>
+                                                        </Run>
+                                                    </TextBlock>
+
+
+
+                                                    <ItemsControl ItemsSource="{Binding RelatedFiles}" IsVisible="{Binding IsRelatedFilesVisible}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:HashFile">
+                                                                <StackPanel Spacing="2" Margin="8,4">
+                                                                    <SelectableTextBlock TextWrapping="Wrap" >
+                                                                        <Run FontSize="12"
+                                                                             Text="{Binding FilePath}">
+
+                                                                            <Run.Foreground>
+                                                                                <MultiBinding Converter="{StaticResource ConfirmedFilesColorConverter}">
+                                                                                    <Binding Path="FoundFiles" />
+                                                                                    <Binding Path="ConfirmedFiles" />
+                                                                                </MultiBinding>
+                                                                            </Run.Foreground>
+                                                                        </Run>
+                                                                        <LineBreak />
+                                                                        <Run FontSize="10"
+                                                                             Foreground="Gray"
+                                                                             Text="{Binding FileHash}" />
+                                                                    </SelectableTextBlock>
+                                                                    <!-- <TextBlock Text="{Binding FilePath}"
+                                                                    TextWrapping="Wrap" />
+                                                                    <TextBlock Text="{Binding FileHash}"
+                                                                    FontFamily="Consolas"
+                                                                    FontSize="11"
+                                                                    Foreground="#2B7FFF"
+                                                                    TextWrapping="Wrap" /> -->
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+
+
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,348 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FileHelper.ViewModels"
+             xmlns:views="using:FileHelper.Views"
+             xmlns:conv="using:FileHelper.Converters"
+             x:Class="FileHelper.Views.FileRenamerView"
+             x:Name="Root"
+             x:DataType="vm:FileRenamerViewModel">
+    <UserControl.Resources>
+        <conv:FileNameFromPathConverter x:Key="FileNameFromPathConverter" />
+    </UserControl.Resources>
+    <Grid RowDefinitions="Auto,*"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Margin="0, 20, 0, 20">
+
+        <StackPanel Grid.Row="0"
+                    Spacing="20"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Top">
+
+            <Grid ColumnDefinitions="*, Auto, Auto"
+                  HorizontalAlignment="Stretch"
+                  ColumnSpacing="10"
+                  RowSpacing="10">
+
+                <TextBox Grid.Column="0"
+                         Text="{Binding SelectedFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         PlaceholderText="Папка не выбрана"
+                         VerticalAlignment="Center"
+                         Classes.success="{Binding IsFolderValid}"
+                         Classes.error="{Binding IsFolderError}" />
+
+                <Button Grid.Column="1"
+                        Content="📂"
+                        Command="{Binding SelectFolderCommand}"
+                        Padding="6,6" />
+
+                <Border Grid.Column="2"
+                        Background="#2000FF00"
+                        CornerRadius="4"
+                        Padding="5"
+                        IsVisible="{Binding IsFolderValid}">
+                    <TextBlock Text="✅" VerticalAlignment="Center" />
+                </Border>
+            </Grid>
+
+            <Button Content="Назначить папку"
+                    Command="{Binding SubmitFolderCommand}"
+                    Padding="20,10" />
+
+            <StackPanel Spacing="10" IsVisible="{Binding IsReadyForSearching}">
+                <CheckBox IsChecked="{Binding FlagMatchCase}" Content="С учётом регистра" />
+                <CheckBox IsChecked="{Binding FlagMatchWholeWord }" Content="Только слово целиком" />
+                <CheckBox IsChecked="{Binding FlagUseRegular}" Content="Использовать регулярное выражение" />
+                <!-- <CheckBox IsChecked="{Binding FlagPreserveCase }" Content="Сохранять регистр (при замене)" /> -->
+                <CheckBox IsChecked="{Binding FlagRecursiveSearch }" Content="Рекурсивный поиск" />
+            </StackPanel>
+
+            <!-- IsVisible="{Binding IsReadyForSearching}" -->
+            <!-- IsVisible="{Binding ShowFileLogs}" -->
+            <Border IsVisible="{Binding IsReadyForSearching}"
+                    BorderBrush="Gray"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <!-- <StackPanel Spacing="10" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+
+                <ToggleButton IsChecked="{Binding FlagFieldsExpanded}" Name="ArrowToggle" VerticalAlignment="Stretch" Width="40"  Background="Transparent">
+
+                <ToggleButton.Transitions>
+                <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25"/>
+                </Transitions>
+                </ToggleButton.Transitions>
+
+                <ToggleButton.Styles>
+                <Style Selector="ToggleButton:checked Path#ArrowIcon">
+                <Setter Property="RenderTransform" Value="rotate(180deg)"/>
+                </Style>
+                </ToggleButton.Styles>
+
+                <Path Name="ArrowIcon"
+                Data="M 0,0 L 5,5 L 0,10"
+                Stroke="Black"
+                StrokeThickness="2"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                RenderTransformOrigin="50%,50%"/>
+                </ToggleButton>
+
+                <StackPanel Spacing="10"  HorizontalAlignment="Stretch" Background="Red" VerticalAlignment="Top">
+                <TextBox Grid.Column="0"
+                Text="{Binding FindQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                PlaceholderText="Найти"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Stretch" />
+
+                <TextBox Grid.Column="1"
+                IsVisible="{Binding FlagFieldsExpanded}"
+                Text="{Binding ReplaceQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                PlaceholderText="Заменить на"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Stretch" />
+                </StackPanel>
+
+                </StackPanel> -->
+                <Grid ColumnDefinitions="Auto, *, Auto, Auto" RowDefinitions="Auto, Auto">
+
+                    <!-- СТОЛБЕЦ 0 (Левый): Кнопка разворачивания (Шеврон) -->
+                    <!-- Сдвинут на обе строки сразу с помощью RowSpan -->
+                    <ToggleButton Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Margin="5,5,5,5" IsChecked="{Binding FlagFieldsExpanded}" Name="ArrowToggle" VerticalAlignment="Stretch" Width="40"  Background="Transparent">
+
+                        <ToggleButton.Transitions>
+                            <Transitions>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25"/>
+                            </Transitions>
+                        </ToggleButton.Transitions>
+
+                        <ToggleButton.Styles>
+                            <Style Selector="ToggleButton:checked Path#ArrowIcon">
+                                <Setter Property="RenderTransform" Value="rotate(90deg)"/>
+                            </Style>
+                        </ToggleButton.Styles>
+
+                        <Path Name="ArrowIcon"
+                              Data="M 0,0 L 5,5 L 0,10"
+                              Stroke="Black"
+                              StrokeThickness="2"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              RenderTransformOrigin="50%,50%"/>
+                    </ToggleButton>
+
+                    <StackPanel Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" VerticalAlignment="Center">
+                        <TextBox Margin="0,5,5,0"
+                                 Text="{Binding FindQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="Найти"
+                                 VerticalAlignment="Center"
+                                 HorizontalAlignment="Stretch" />
+
+                        <TextBox  Margin="0,5,5,5"
+                                  IsVisible="{Binding FlagFieldsExpanded}"
+                                  Text="{Binding ReplaceQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  PlaceholderText="Заменить на"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Stretch" />
+                    </StackPanel>
+
+
+                    <!-- <StackPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="1" Margin="5,5" VerticalAlignment="Top">
+                    <TextBlock Text="10 of 11" HorizontalAlignment="Center"/>
+
+                    </StackPanel> -->
+
+                    <!-- Grid.Column="2" -->
+                    <StackPanel IsVisible="{Binding FlagFieldsExpanded}"
+                                Grid.Column="3" Grid.Row="1" Grid.RowSpan="1" Orientation="Horizontal" Margin="5,5,0,5" Spacing="10" VerticalAlignment="Bottom">
+                        <Button Width="30" Height="30" ToolTip.Tip="Заменить" Command="{Binding RenameFileCommand}">
+                            <PathIcon Data="M3.221 3.739l2.261 2.269L7.7 3.784l-.7-.7-1.012 1.007-.008-1.6a.523.523 0 0 1 .5-.526H8V1H6.48A1.482 1.482 0 0 0 5 2.489V4.1L3.927 3.033l-.706.706zm6.67 1.794h.01c.183.311.451.467.806.467.393 0 .706-.168.94-.503.236-.335.353-.78.353-1.333 0-.511-.1-.913-.301-1.207-.201-.295-.488-.442-.86-.442-.405 0-.718.194-.938.581h-.01V1H9v4.919h.89v-.386zm-.015-1.061v-.34c0-.248.058-.448.175-.601a.54.54 0 0 1 .445-.23.49.49 0 0 1 .436.233c.104.154.155.368.155.643 0 .33-.056.587-.169.768a.524.524 0 0 1-.47.27.495.495 0 0 1-.411-.211.853.853 0 0 1-.16-.532zM9 12.769c-.256.154-.625.231-1.108.231-.563 0-1.02-.178-1.369-.533-.349-.355-.523-.813-.523-1.374 0-.648.186-1.158.56-1.53.374-.376.875-.563 1.5-.563.433 0 .746.06.94.179v.998a1.26 1.26 0 0 0-.792-.276c-.325 0-.583.1-.774.298-.19.196-.283.468-.283.816 0 .338.09.603.272.797.182.191.431.287.749.287.282 0 .558-.092.828-.276v.946zM4 7L3 8v6l1 1h7l1-1V8l-1-1H4zm0 1h7v6H4V8z"
+                                      Width="16"
+                                      Height="16"
+                                      Foreground="Black" />
+                        </Button>
+
+                        <Button Width="30" Height="30" ToolTip.Tip="Заменить все" Command="{Binding RenameFilesCommand}">
+                            <PathIcon Data="M11.6 2.677c.147-.31.356-.465.626-.465.248 0 .44.118.573.353.134.236.201.557.201.966 0 .443-.078.798-.235 1.067-.156.268-.365.402-.627.402-.237 0-.416-.125-.537-.374h-.008v.31H11V1h.593v1.677h.008zm-.016 1.1a.78.78 0 0 0 .107.426c.071.113.163.169.274.169.136 0 .24-.072.314-.216.075-.145.113-.35.113-.615 0-.22-.035-.39-.104-.514-.067-.124-.164-.187-.29-.187-.12 0-.219.062-.297.185a.886.886 0 0 0-.117.48v.272zM4.12 7.695L2 5.568l.662-.662 1.006 1v-1.51A1.39 1.39 0 0 1 5.055 3H7.4v.905H5.055a.49.49 0 0 0-.468.493l.007 1.5.949-.944.656.656-2.08 2.085zM9.356 4.93H10V3.22C10 2.408 9.685 2 9.056 2c-.135 0-.285.024-.45.073a1.444 1.444 0 0 0-.388.167v.665c.237-.203.487-.304.75-.304.261 0 .392.156.392.469l-.6.103c-.506.086-.76.406-.76.961 0 .263.061.473.183.631A.61.61 0 0 0 8.69 5c.29 0 .509-.16.657-.48h.009v.41zm.004-1.355v.193a.75.75 0 0 1-.12.436.368.368 0 0 1-.313.17.276.276 0 0 1-.22-.095.38.38 0 0 1-.08-.248c0-.222.11-.351.332-.389l.4-.067zM7 12.93h-.644v-.41h-.009c-.148.32-.367.48-.657.48a.61.61 0 0 1-.507-.235c-.122-.158-.183-.368-.183-.63 0-.556.254-.876.76-.962l.6-.103c0-.313-.13-.47-.392-.47-.263 0-.513.102-.75.305v-.665c.095-.063.224-.119.388-.167.165-.049.315-.073.45-.073.63 0 .944.407.944 1.22v1.71zm-.64-1.162v-.193l-.4.068c-.222.037-.333.166-.333.388 0 .1.027.183.08.248a.276.276 0 0 0 .22.095.368.368 0 0 0 .312-.17c.08-.116.12-.26.12-.436zM9.262 13c.321 0 .568-.058.738-.173v-.71a.9.9 0 0 1-.552.207.619.619 0 0 1-.5-.215c-.12-.145-.181-.345-.181-.598 0-.26.063-.464.189-.612a.644.644 0 0 1 .516-.223c.194 0 .37.069.528.207v-.749c-.129-.09-.338-.134-.626-.134-.417 0-.751.14-1.001.422-.249.28-.373.662-.373 1.148 0 .42.116.764.349 1.03.232.267.537.4.913.4zM2 9l1-1h9l1 1v5l-1 1H3l-1-1V9zm1 0v5h9V9H3zm3-2l1-1h7l1 1v5l-1 1V7H6z"
+                                      Width="16"
+                                      Height="16"
+                                      Foreground="Black" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3" Grid.Row="0" VerticalAlignment="Top"
+                                Orientation="Horizontal" Margin="5,5" Spacing="10">
+
+                        <!-- <Button Content="↑" ToolTip.Tip="Вверх" Command="{Binding MoveUpCommand}" Margin="5,0"/>
+                        <Button Content="↓" ToolTip.Tip="Вниз" Command="{Binding MoveDownCommand}" Margin="5,0"/>
+                        <Button Content="X" ToolTip.Tip="Очистить" Command="{Binding ClearCommand}" Margin="5,0"/> -->
+
+                        <!-- <Button ToolTip.Tip="С учётом регистра">
+                        <Grid Width="20" Height="20">
+                        <TextBlock Text="Aa"
+                        FontFamily="Arial"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="Black"/>
+                        </Grid>
+                        </Button> -->
+
+                        <ToggleButton IsChecked="{Binding FlagMatchCase}"
+                                      ToolTip.Tip="С учётом регистра"
+                                      Classes="ToggleIconBtn">
+                            <Grid Width="20" Height="20">
+                                <TextBlock Text="Aa"
+                                           FontFamily="Arial"
+                                           FontSize="12"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </Grid>
+                        </ToggleButton>
+
+                        <ToggleButton IsChecked="{Binding FlagMatchWholeWord}"
+                                      ToolTip.Tip="Полностью совпадающее слово">
+                            <Grid Width="20" Height="20">
+                                <TextBlock Text="ab"
+                                           FontFamily="Arial"
+                                           FontSize="12"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,0,3"
+                                           Foreground="Black"/>
+
+                                <Path Data="M0,13 L2,15 L12,15 L14,13"
+                                      Stroke="Black"
+                                      StrokeThickness="1.2"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,0,0,1"/>
+                            </Grid>
+                        </ToggleButton>
+
+                        <!-- <ToggleButton IsChecked="{Binding FlagPreserveCase}"
+                        ToolTip.Tip="Сохранять регистр">
+                        <Grid Width="20" Height="20">
+                        <TextBlock Text="AB"
+                        FontFamily="Arial"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="Black"/>
+                        </Grid>
+                        </ToggleButton> -->
+
+
+                        <ToggleButton IsChecked="{Binding FlagUseRegular}"
+                                      ToolTip.Tip="Использовать регулярное выражение">
+
+                            <Grid Width="20" Height="20">
+                                <Path Data="M 10,2 L 11.5,5.5 L 15,4 L 13.5,7.5 L 17,9 L 13.5,10.5 L 15,14 L 11.5,12.5 L 10,16 L 8.5,12.5 L 5,14 L 6.5,10.5 L 3,9 L 6.5,7.5 L 5,4 L 8.5,5.5 Z"
+                                      Fill="Black"
+                                      Width="14"
+                                      Height="14"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      Margin="1,0,0,4" />
+
+                                <Ellipse Width="2.5"
+                                         Height="2.5"
+                                         Fill="Black"
+                                         HorizontalAlignment="Left"
+                                         VerticalAlignment="Bottom"
+                                         Margin="1,0,0,0"/>
+                            </Grid>
+
+                        </ToggleButton>
+
+                    </StackPanel>
+
+                </Grid>
+            </Border>
+
+            <!-- IsVisible="{Binding IsReadyForSearching}" -->
+            <StackPanel Spacing="10" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Top" >
+
+                <Border  Margin="5,5,0,5" BorderBrush="Gray" BorderThickness="1" CornerRadius="4" MaxWidth="580">
+                    <ListBox ItemsSource="{Binding FoundItems}" MaxHeight="160" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <!-- <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" /> -->
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <views:HighlightingTextBlock
+                                        Text="{Binding Converter={StaticResource FileNameFromPathConverter}}"
+                                        SearchText="{Binding DataContext.FindQuery, ElementName=Root}"
+                                        IsMatchCase="{Binding DataContext.FlagMatchCase, ElementName=Root}"
+                                        IsMatchWholeWord="{Binding DataContext.FlagMatchWholeWord, ElementName=Root}"
+                                        IsUseRegular="{Binding DataContext.FlagUseRegular, ElementName=Root}"
+                                        TextBrush="Black"
+                                        MatchBrush="Blue"
+                                        Background="LightGray"
+                                        MatchBackgroundBrush="#3355FF88"
+                                        TextTrimming="CharacterEllipsis" />
+
+                                    <Button Content="X" ToolTip.Tip="Удалить" Command="{Binding DataContext.RemoveItemCommand, ElementName=Root}" CommandParameter="{Binding}" Margin="5,0"/>
+                                </StackPanel>
+
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+
+                <Border Margin="5,5,0,5" BorderBrush="Gray" BorderThickness="1" CornerRadius="4" MaxWidth="280">
+                    <ListBox ItemsSource="{Binding ReplacedItems}" MaxHeight="160" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <!-- <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" /> -->
+
+                                <views:HighlightingTextBlock
+                                    Text="{Binding Converter={StaticResource FileNameFromPathConverter}}"
+                                    SearchText="{Binding DataContext.ReplaceQuery, ElementName=Root}"
+                                    TextBrush="Blue"
+                                    MatchBrush="Red"
+                                    Background="LightGray"
+                                    MatchBackgroundBrush="#3355FF88"
+                                    TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </StackPanel>
+
+
+        </StackPanel>
+
+        <ProgressBar Grid.Row="1"
+                     IsVisible="{Binding IsRenaming}"
+                     Value="{Binding LoadingProgress}"
+                     VerticalAlignment="Bottom"
+                     Minimum="0"
+                     Maximum="100"
+                     Height="20"
+                     Margin="0,20,0,0"
+                     Background="#E0E0E0"
+                     Foreground="#04AA04"
+                     IsHitTestVisible="False"
+                     ShowProgressText="True"
+                     ProgressTextFormat=" {1:F0}% "
+                     >
+            <ProgressBar.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Value"
+                                      Duration="0:0:0.2"
+                                      Easing="CubicEaseOut"/>
+                </Transitions>
+            </ProgressBar.Transitions>
+        </ProgressBar>
+    </Grid>
+
+
+</UserControl>

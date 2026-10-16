@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:FileHelper.ViewModels"
+             xmlns:views="using:FileHelper.Views"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="FileHelper.Views.MainView"
+             x:DataType="vm:MainViewModel">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+        to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <!-- <UserControl.Styles>
+    <Style Selector="TextBox.success">
+    <Setter Property="BorderBrush" Value="Green" />
+    <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <Style Selector="TextBox.error">
+    <Setter Property="BorderBrush" Value="Red" />
+    <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    </UserControl.Styles> -->
+    <UserControl.Styles>
+        <!-- Стили для класса Специфического Успеха (.success) -->
+        <Style Selector="TextBox.success">
+            <Setter Property="BorderBrush" Value="Green" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <!-- Сохраняем зеленый цвет рамки при фокусе -->
+        <Style Selector="TextBox.success:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="Green" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <!-- Стили для класса Ошибки (.error) -->
+        <Style Selector="TextBox.error">
+            <Setter Property="BorderBrush" Value="Red" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <!-- Сохраняем красный цвет рамки при фокусе -->
+        <Style Selector="TextBox.error:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="Red" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <!-- Стили для всех элементов TabItem -->
+        <Style Selector="TabItem">
+            <!-- 1. Меняем шрифт: название, размер и жирность -->
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+
+            <!-- 2. Меняем внутренние отступы (Padding) вокруг текста вкладки -->
+            <!-- Порядок: Слева, Сверху, Справа, Снизу -->
+            <Setter Property="Padding" Value="15, 10, 15, 0" />
+
+            <!-- Внешние отступы между самими вкладками (Margin), если нужны -->
+            <!-- <Setter Property="Margin" Value="0, 0, 10, 0" /> -->
+        </Style>
+
+        <!-- 3. Меняем линию (подчеркивание) под активной/выбранной вкладкой -->
+        <Style Selector="TabItem:selected /template/ Border#PART_SelectedPipe">
+
+            <Setter Property="Height" Value="4" />
+
+            <!-- <Setter Property="Background" Value="#FF4500" /> -->
+
+            <Setter Property="CornerRadius" Value="2" />
+        </Style>
+
+
+
+        <!-- Стили для кнопок -->
+        <!-- 1. Базовое состояние (не нажата) -->
+        <!-- <Style Selector="ToggleButton.ToggleIconBtn">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="0"/>
+        </Style> -->
+
+        <!-- 2. Состояние: НАЖАТА (активна) -->
+        <!-- <Style Selector="ToggleButton.ToggleIconBtn:checked">
+        <Setter Property="Background" Value="#E0E0E0"/>
+        <Setter Property="BorderBrush" Value="#B0B0B0"/>
+        </Style> -->
+
+        <!-- 3. Состояние: НАВЕДЕНИЕ КУРСОРА (не нажата) -->
+        <!-- <Style Selector="ToggleButton.ToggleIconBtn:pointerover">
+        <Setter Property="Background" Value="#F5F5F5"/>
+        </Style> -->
+
+        <!-- 4. Состояние: НАЖАТА + НАВЕДЕНИЕ КУРСОРА -->
+        <!-- <Style Selector="ToggleButton.ToggleIconBtn:checked:pointerover">
+        <Setter Property="Background" Value="#D0D0D0"/>
+        <Setter Property="BorderBrush" Value="#909090"/>
+        </Style> -->
+
+        <!-- 5. Состояние: НАЖАТИЕ (клик мышкой) для лучшей отзывчивости -->
+        <!-- <Style Selector="ToggleButton.ToggleIconBtn:pressed">
+        <Setter Property="Background" Value="#C8C8C8"/>
+        </Style>
+        <Style Selector="ToggleButton.ToggleIconBtn:checked:pressed">
+        <Setter Property="Background" Value="#B8B8B8"/>
+        </Style> -->
+
+
+    </UserControl.Styles>
+
+
+
+
+    <TabControl Margin="20 20 20 20">
+        <TabItem Header="Создание хешей">
+            <views:FileHasherView DataContext="{Binding FileHasherViewModel}" />
+        </TabItem>
+
+        <TabItem Header="Проверка хешей">
+            <views:FileHashReaderView DataContext="{Binding FileHashReaderViewModel}" />
+        </TabItem>
+
+        <TabItem Header="Сортировка">
+            <views:FileSorterView DataContext="{Binding FileSorterViewModel}" />
+        </TabItem>
+
+        <TabItem Header="Переименование">
+            <views:FileRenamerView DataContext="{Binding FileRenamerViewModel}" />
+        </TabItem>
+
+        <TabItem Header="Поиск по архивам">
+            <views:FileArchiveSearcher DataContext="{Binding FileArchiveSearcherViewModel}" />
+        </TabItem>
+
+
+    </TabControl>
+
+</UserControl>

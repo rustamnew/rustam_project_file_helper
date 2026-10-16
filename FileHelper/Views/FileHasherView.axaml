@@ -1,0 +1,386 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FileHelper.ViewModels"
+             xmlns:conv="using:FileHelper.Converters"
+             x:Class="FileHelper.Views.FileHasherView"
+             x:DataType="vm:FileHasherViewModel">
+    <UserControl.Resources>
+        <conv:MultiplyConverter x:Key="MultiplyConverter" />
+        <conv:FileSizeConverter x:Key="FileSizeConverter" />
+        <conv:FileIconConverter x:Key="FileIconConverter" />
+    </UserControl.Resources>
+    <Grid RowDefinitions="Auto,*"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Margin="0, 20, 0, 20">
+
+        <StackPanel Grid.Row="0"
+                    Spacing="20"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Top">
+
+            <!--
+            <Grid ColumnDefinitions="*, Auto, Auto"
+            HorizontalAlignment="Stretch"
+            ColumnSpacing="10"
+            RowSpacing="10">
+
+            <TextBox Grid.Column="0"
+            Text="{Binding SelectedFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            PlaceholderText="Папка не выбрана"
+            VerticalAlignment="Center"
+            Classes.success="{Binding IsFolderValid}"
+            Classes.error="{Binding IsFolderError}" />
+
+            <Button Grid.Column="1"
+            Content="📂"
+            Command="{Binding SelectFolderCommand}"
+            Padding="6,6" />
+
+            <Border Grid.Column="2"
+            Background="#2000FF00"
+            CornerRadius="4"
+            Padding="5"
+            IsVisible="{Binding IsFolderValid}">
+            <TextBlock Text="✅" VerticalAlignment="Center" />
+            </Border>
+            </Grid>
+
+            <Button Content="Назначить папку"
+            Command="{Binding SubmitFolderCommand}"
+            Padding="20,10" />
+            -->
+
+
+            <StackPanel Spacing="16">
+                <!-- Background="#2e2e2e" -->
+                <Border Name="DropZone1"
+                        BorderBrush="#00a2e8"
+                        BorderThickness="2"
+                        CornerRadius="8"
+                        Margin="4"
+                        HorizontalAlignment="Center"
+                        DragDrop.AllowDrop="True"
+                        >
+
+
+
+                    <Grid Width="200" Height="200">
+                        <Viewbox Width="200" Height="200" >
+                            <Canvas Width="120" Height="120" Background="#00a2e8"> <!-- Замените на исходный viewBox вашего SVG -->
+
+                            <!-- Пунктирная рамка -->
+                            <Path Data="M 10 10 L 110 10 L 110 110 L 10 110 Z"
+                                  Width="240"
+                                  Height="16"
+                                  Stroke="White"
+                                  StrokeThickness="2"
+                                  StrokeDashArray="3"/>
+                                <!-- Прямоугольник изображения -->
+                                <Path Data="M 30 20 L 30 70 L 80 70 L 80 20 Z"
+                                      Width="16"
+                                      Height="150"
+                                      Stroke="White"
+                                      StrokeThickness="2" />
+                                <!-- Горы -->
+                                <Path Data="M 30 60 L 45 40 L 55 50 L 65 35 L 80 60 L 80 70 L 30 70 Z"
+                                      Width="16"
+                                      Height="16"
+                                      Stroke="White"
+                                      StrokeThickness="2" />
+                                <!-- Солнце -->
+                                <Path Data="M 42 32 A 6 6 0 1 0 42 32.01"
+                                      Width="16"
+                                      Height="16"
+                                      Stroke="White"
+                                      StrokeThickness="2" />
+                                <!-- Курсор мыши -->
+                                <Path Data="M 70 75 L 70 95 L 79 87 L 92 100 L 98 94 L 85 80 L 93 73 Z"
+                                      Width="16"
+                                      Height="16"
+                                      Stroke="White"
+                                      StrokeThickness="2" />
+
+                                <!-- <TextBlock Name="DropZone1Text"
+                                Text="Перетащите папку сюда"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Foreground="#888888"/>  -->
+                            </Canvas>
+                        </Viewbox>
+                        <!-- <TextBlock Text="Drop Folders Here"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="White"
+                        FontSize="16"/> -->
+                    </Grid>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                    <Button HorizontalAlignment="Center"
+                            Content="Добавить файлы"
+                            Command="{Binding AddFilesCommand}"
+                            Padding="20,10"></Button>
+
+                    <Button HorizontalAlignment="Center"
+                            Content="Добавить папку"
+                            Command="{Binding AddFolderCommand}"
+                            Padding="20,10"></Button>
+                </StackPanel>
+
+            </StackPanel>
+
+
+            <!-- IsVisible="{Binding IsReadyForHashing}" -->
+            <StackPanel Spacing="10" >
+
+
+
+                <!--
+                <CheckBox IsChecked="{Binding ShowSpeedLimit}" Content="Ограничить скорость" />
+
+                <StackPanel Spacing="10" Margin="20" Orientation="Horizontal" IsVisible="{Binding ShowSpeedLimit}">
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Чтение диска: " />
+                </StackPanel>
+
+                <Slider Value="{Binding DiskReadSpeedSliderValueInt, Mode=TwoWay}"
+                Name="MySlider"
+                Minimum="1"
+                Maximum="10"
+                TickFrequency="1"
+                IsSnapToTickEnabled="True"
+                Width="200" />
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding #MySlider.Value, Converter={StaticResource MultiplyConverter}}"
+                FontWeight="Bold" />
+                </StackPanel>
+
+
+                </StackPanel> -->
+
+                <ListBox ItemsSource="{Binding ComparisonFolders}"
+                         BorderBrush="Gray"
+                         BorderThickness="1"
+                         CornerRadius="4"
+                         Padding="8">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="10" Margin="0,5">
+                                <Grid Grid.Column="0" ColumnDefinitions="Auto, *" ColumnSpacing="10" Margin="0,5">
+                                    <TextBlock Grid.Column="0" Text="{Binding ., Converter={StaticResource FileIconConverter}}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1" Text="{Binding .}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="5,0,0,0" />
+                                </Grid>
+                                <Button Grid.Column="1"
+                                        Content="❌"
+                                        Command="{Binding $parent[UserControl].DataContext.RemoveComparisonFolderCommand}"
+                                        CommandParameter="{Binding .}"
+                                        Padding="5"
+                                        CornerRadius="4" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <ListBox ItemsSource="{Binding ComparisonFiles}"
+                         BorderBrush="Gray"
+                         BorderThickness="1"
+                         CornerRadius="4"
+                         Padding="8">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="10" Margin="0,5">
+                                <Grid Grid.Column="0" ColumnDefinitions="Auto, *" ColumnSpacing="10" Margin="0,5">
+                                    <TextBlock Grid.Column="0" Text="{Binding ., Converter={StaticResource FileIconConverter}}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1" Text="{Binding .}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="5,0,0,0" />
+                                </Grid>
+
+                                <Button Grid.Column="1"
+                                        Content="❌"
+                                        Command="{Binding $parent[UserControl].DataContext.RemoveComparisonFileCommand}"
+                                        CommandParameter="{Binding .}"
+                                        Padding="5"
+                                        CornerRadius="4" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+
+
+
+                <CheckBox IsChecked="{Binding SaveHashCheckFilesInFolders}" Content="Оставлять файлы проверки хешей в переданных папках" />
+
+                <CheckBox IsChecked="{Binding SaveHashCheckFilesNearFiles}" Content="Оставлять файлы проверки хешей рядом с переданными файлами" />
+
+                <!-- <CheckBox IsChecked="{Binding ExcludeHashCheckFiles}" Content="Объединять файлы проверки хешей в одной папке" Margin="0,5,0,0" /> -->
+
+                <CheckBox IsChecked="{Binding SaveLogs}" Content="Сохранить лог" />
+
+                <!-- Проверять CanStartScan -->
+                <!-- IsEnabled="{Binding CanStartScan}" -->
+                <Button Content="Начать хеширование"
+                        IsEnabled="{Binding CanStartScan}"
+                        Command="{Binding StartScanCommand}"
+                        HorizontalAlignment="Center"
+                        Padding="20,10" />
+
+                <Button Content="Сравнить результаты"
+                        IsEnabled="{Binding CanStartScan}"
+                        HorizontalAlignment="Center"
+                        Padding="20,10" />
+
+                <TextBlock Text="{Binding Message}" />
+
+                <!-- ПЕРЕРАСТЯНУТЬ ЧЕРЕЗ ГРИД -->
+                <!-- <Grid RowDefinitions="Auto, *">
+                Верхний блок (займет только свое место)
+                <TextBlock Grid.Row="0" Text="Верхнее меню или заголовок" />
+
+                Этот блок автоматически растянется до самого низа
+                <Border Grid.Row="1" Background="LightBlue">
+                <TextBlock Text="Я занимаю всё оставшееся пространство!" />
+                </Border>
+                </Grid> -->
+
+
+                <!-- <Border BorderBrush="Gray"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8">
+
+                <ListBox ItemsSource="{Binding HashResults}" >
+                <ListBox.ItemTemplate>
+                <DataTemplate>
+                <Grid ColumnDefinitions="0.3*, 100, 0.5*" ColumnSpacing="10">
+                <TextBlock Grid.Column="0" Text="{Binding RelativePath}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Text="{Binding SizeInBytes, Converter={StaticResource FileSizeConverter}}" HorizontalAlignment="Left" />
+                <TextBlock Grid.Column="2"
+                Text="{Binding Hash}"
+                FontFamily="Consolas"
+                Foreground="#2B7FFF" />
+                </Grid>
+                </DataTemplate>
+                </ListBox.ItemTemplate>
+                </ListBox>
+                </Border> -->
+                <!-- <ScrollViewer Height="250"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled"> -->
+                <ItemsControl ItemsSource="{Binding ComparisonFoldersResults}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{Binding FolderPath}"
+                                           FontWeight="Bold"
+                                           Foreground="#2B7FFF"
+                                           TextTrimming="CharacterEllipsis" />
+
+                                <Border BorderBrush="Gray"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="8">
+                                    <ListBox ItemsSource="{Binding Results}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="0.3*, 100, 0.5*" ColumnSpacing="10">
+                                                    <TextBlock Grid.Column="0" Text="{Binding RelativePath}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding SizeInBytes, Converter={StaticResource FileSizeConverter}}" HorizontalAlignment="Left" />
+                                                    <TextBlock Grid.Column="2"
+                                                               Text="{Binding Hash}"
+                                                               FontFamily="Consolas"
+                                                               Foreground="#2B7FFF" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Border>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <!-- </ScrollViewer> -->
+
+                <!-- <ScrollViewer Height="250"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled"> -->
+                <ItemsControl ItemsSource="{Binding ComparisonFilesResults}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Spacing="8">
+                                <TextBlock Grid.Column="0" Text="{Binding RelativePath}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding Hash}"
+                                           FontFamily="Consolas"
+                                           Foreground="#2B7FFF" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <!-- </ScrollViewer> -->
+
+
+                <!-- <Border IsVisible="{Binding ShowFileLogs}"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                CornerRadius="4">
+                <ScrollViewer Margin="8, 4, 8, 8"
+                MaxHeight="150"
+                VerticalScrollBarVisibility="Auto">
+
+                <SelectableTextBlock Text="{Binding LogMessage}" />
+                </ScrollViewer>
+                </Border> -->
+            </StackPanel>
+
+
+            <Button IsVisible="{Binding ResultReady}"
+                    Content="Сохранить результат"
+                    Command="{Binding SaveResultAsCommand}"
+                    BorderBrush="Green"
+                    BorderThickness="2"
+                    HorizontalAlignment="Center"
+                    Padding="26,18"
+                    Background="Green"
+                    Foreground="White"
+                    FontSize="24"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center" />
+
+
+        </StackPanel>
+
+        <ProgressBar Grid.Row="1"
+                     IsVisible="{Binding IsHashing}"
+                     Value="{Binding LoadingProgress}"
+                     VerticalAlignment="Bottom"
+                     Minimum="0"
+                     Maximum="100"
+                     Height="20"
+                     Margin="0,20,0,0"
+                     Background="#E0E0E0"
+                     Foreground="#04AA04"
+                     IsHitTestVisible="False"
+                     ShowProgressText="True"
+                     ProgressTextFormat=" {1:F0}% ">
+            <ProgressBar.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Value"
+                                      Duration="0:0:0.2"
+                                      Easing="CubicEaseOut"/>
+                </Transitions>
+            </ProgressBar.Transitions>
+        </ProgressBar>
+    </Grid>
+</UserControl>

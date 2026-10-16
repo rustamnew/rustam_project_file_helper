@@ -1,0 +1,191 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FileHelper.ViewModels"
+             xmlns:model="using:FileHelper.Models"
+             x:Class="FileHelper.Views.FileSorterView"
+             x:DataType="vm:FileSorterViewModel">
+
+    <Grid RowDefinitions="Auto,*"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Margin="0, 20, 0, 20">
+
+        <StackPanel Grid.Row="0"
+                    Spacing="20"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Top">
+
+            <Grid ColumnDefinitions="*, Auto, Auto"
+                  HorizontalAlignment="Stretch"
+                  ColumnSpacing="10"
+                  RowSpacing="10">
+
+                <TextBox Grid.Column="0"
+                         Text="{Binding SelectedFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         PlaceholderText="Папка не выбрана"
+                         VerticalAlignment="Center"
+                         Classes.success="{Binding IsFolderValid}"
+                         Classes.error="{Binding IsFolderError}" />
+
+                <Button Grid.Column="1"
+                        Content="📂"
+                        Command="{Binding SelectFolderCommand}"
+                        Padding="6,6" />
+
+                <Border Grid.Column="2"
+                        Background="#2000FF00"
+                        CornerRadius="4"
+                        Padding="5"
+                        IsVisible="{Binding IsFolderValid}">
+                    <TextBlock Text="✅" VerticalAlignment="Center" />
+                </Border>
+            </Grid>
+
+            <Button Content="Назначить папку"
+                    Command="{Binding SubmitFolderCommand}"
+                    Padding="20,10" />
+
+            <StackPanel Spacing="10" IsVisible="{Binding IsReadyForSorting}">
+                <!-- <ToggleSwitch OnContent="Рекурсивное прохождение"
+                OffContent="Только текущая папка"
+                Content="Режим сортировки"
+                IsChecked="{Binding IsExtractFilesEnabled}" /> -->
+                <CheckBox IsChecked="{Binding ShowFileLogs}" Content="Показать логи" />
+
+                <Button Content="Начать"
+                        Command="{Binding SortFolderCommand}"
+                        HorizontalAlignment="Center"
+                        Padding="20,10" />
+
+                <TextBlock Text="{Binding Message}" />
+                <Border IsVisible="{Binding ShowFileLogs}"
+                        BorderBrush="Gray"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                    <ScrollViewer Margin="8, 4, 8, 8"
+                                  MaxHeight="150"
+                                  VerticalScrollBarVisibility="Auto">
+                        <!-- <SelectableTextBlock Text="{Binding Message}" /> -->
+
+                        <SelectableTextBlock Text="{Binding LogMessage}" />
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+
+            <TextBlock Text="Категории сортировки" FontWeight="SemiBold" />
+
+            <TextBlock Text="Список пуст"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Foreground="Gray"
+                       FontSize="16">
+                <TextBlock.IsVisible>
+                    <Binding Path="Categories.Count" Converter="{x:Static ObjectConverters.Equal}">
+                        <Binding.ConverterParameter>
+                            <x:Int32>0</x:Int32>
+                        </Binding.ConverterParameter>
+                    </Binding>
+                </TextBlock.IsVisible>
+            </TextBlock>
+
+            <ItemsControl ItemsSource="{Binding Categories}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"
+                                   HorizontalAlignment="Left"
+                                   ItemSpacing="10"
+                                   LineSpacing="10" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="model:FileSortCategory">
+                        <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,6">
+                            <!-- Orientation="Horizontal" -->
+                            <StackPanel  Spacing="10">
+                                <TextBlock Text="{Binding Name}" />
+                                <TextBlock Text="{Binding Extensions}" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Button x:Name="CategoriesButton" Content="Настроить категории" HorizontalAlignment="Left">
+                <Button.Flyout>
+                    <Flyout Placement="Bottom">
+                        <StackPanel Width="420" Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Категории и расширения" FontWeight="SemiBold" VerticalAlignment="Center" />
+
+                                <!-- <Button Grid.Column="1" Content="x" Click="CloseCategoriesFlyout" /> -->
+                                <Button Grid.Column="1" Content="x" Click="CancelCategoriesFlyout" />
+                            </Grid>
+                            <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding CategoriesSettings}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="model:FileSortCategory">
+                                            <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,6">
+                                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                                                    <CheckBox Grid.Row="0" Grid.ColumnSpan="2"
+                                                              IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                                              Content="Использовать категорию" />
+                                                    <TextBox Grid.Row="1" Grid.Column="0"
+                                                             Text="{Binding Name, Mode=TwoWay}"
+                                                             PlaceholderText="Название категории"
+                                                             IsEnabled="{Binding IsEnabled}"
+                                                             Classes.error="{Binding HasNameError}" />
+                                                    <Button Grid.Row="1" Grid.Column="1"
+                                                            Content="Удалить"
+                                                            Command="{Binding $parent[UserControl].((vm:FileSorterViewModel)DataContext).RemoveCategoryCommand}"
+                                                            CommandParameter="{Binding .}" />
+                                                    <TextBox Grid.Row="2" Grid.ColumnSpan="2"
+                                                             Text="{Binding Extensions, Mode=TwoWay}"
+                                                             PlaceholderText="Расширения: .pdf, .docx"
+                                                             IsEnabled="{Binding IsEnabled}"
+                                                             Classes.error="{Binding HasExtensionsError}" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                <Button Grid.Column="0" Content="Добавить" Classes="subtle" Command="{Binding AddCategoryCommand}" />
+                                <Button Grid.Column="2" Content="Отмена" Click="CancelCategoriesFlyout" />
+                                <Button Grid.Column="3" Content="Сохранить" Classes="accent" Command="{Binding SaveCategoriesCommand}" Margin="8,0,0,0" />
+                            </Grid>
+                            <TextBlock Text="{Binding CategoriesMessage}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+
+        </StackPanel>
+
+        <!-- ProgressTextFormat="Loading... {1:F0}%" -->
+        <ProgressBar Grid.Row="1"
+                     IsVisible="{Binding IsSorting}"
+                     Value="{Binding LoadingProgress}"
+                     VerticalAlignment="Bottom"
+                     Minimum="0"
+                     Maximum="100"
+                     Height="20"
+                     Margin="0,20,0,0"
+                     Background="#E0E0E0"
+                     Foreground="#04AA04"
+                     IsHitTestVisible="False"
+                     ShowProgressText="True"
+                     ProgressTextFormat=" {1:F0}% "
+                     >
+            <ProgressBar.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Value"
+                                      Duration="0:0:0.2"
+                                      Easing="CubicEaseOut"/>
+                </Transitions>
+            </ProgressBar.Transitions>
+        </ProgressBar>
+    </Grid>
+</UserControl>
