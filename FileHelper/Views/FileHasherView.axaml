@@ -19,38 +19,6 @@
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Top">
 
-            <!--
-            <Grid ColumnDefinitions="*, Auto, Auto"
-            HorizontalAlignment="Stretch"
-            ColumnSpacing="10"
-            RowSpacing="10">
-
-            <TextBox Grid.Column="0"
-            Text="{Binding SelectedFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-            PlaceholderText="Папка не выбрана"
-            VerticalAlignment="Center"
-            Classes.success="{Binding IsFolderValid}"
-            Classes.error="{Binding IsFolderError}" />
-
-            <Button Grid.Column="1"
-            Content="📂"
-            Command="{Binding SelectFolderCommand}"
-            Padding="6,6" />
-
-            <Border Grid.Column="2"
-            Background="#2000FF00"
-            CornerRadius="4"
-            Padding="5"
-            IsVisible="{Binding IsFolderValid}">
-            <TextBlock Text="✅" VerticalAlignment="Center" />
-            </Border>
-            </Grid>
-
-            <Button Content="Назначить папку"
-            Command="{Binding SubmitFolderCommand}"
-            Padding="20,10" />
-            -->
-
 
             <StackPanel Spacing="16">
                 <!-- Background="#2e2e2e" -->
@@ -63,19 +31,19 @@
                         DragDrop.AllowDrop="True"
                         >
 
-
-
                     <Grid Width="200" Height="200">
                         <Viewbox Width="200" Height="200" >
-                            <Canvas Width="120" Height="120" Background="#00a2e8"> <!-- Замените на исходный viewBox вашего SVG -->
 
-                            <!-- Пунктирная рамка -->
-                            <Path Data="M 10 10 L 110 10 L 110 110 L 10 110 Z"
-                                  Width="240"
-                                  Height="16"
-                                  Stroke="White"
-                                  StrokeThickness="2"
-                                  StrokeDashArray="3"/>
+                            <!-- Замените на исходный viewBox вашего SVG -->
+                            <Canvas Width="120" Height="120" Background="#00a2e8">
+
+                                <!-- Пунктирная рамка -->
+                                <Path Data="M 10 10 L 110 10 L 110 110 L 10 110 Z"
+                                      Width="240"
+                                      Height="16"
+                                      Stroke="White"
+                                      StrokeThickness="2"
+                                      StrokeDashArray="3"/>
                                 <!-- Прямоугольник изображения -->
                                 <Path Data="M 30 20 L 30 70 L 80 70 L 80 20 Z"
                                       Width="16"
@@ -133,35 +101,7 @@
 
             <!-- IsVisible="{Binding IsReadyForHashing}" -->
             <StackPanel Spacing="10" >
-
-
-
-                <!--
-                <CheckBox IsChecked="{Binding ShowSpeedLimit}" Content="Ограничить скорость" />
-
-                <StackPanel Spacing="10" Margin="20" Orientation="Horizontal" IsVisible="{Binding ShowSpeedLimit}">
-
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Чтение диска: " />
-                </StackPanel>
-
-                <Slider Value="{Binding DiskReadSpeedSliderValueInt, Mode=TwoWay}"
-                Name="MySlider"
-                Minimum="1"
-                Maximum="10"
-                TickFrequency="1"
-                IsSnapToTickEnabled="True"
-                Width="200" />
-
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="{Binding #MySlider.Value, Converter={StaticResource MultiplyConverter}}"
-                FontWeight="Bold" />
-                </StackPanel>
-
-
-                </StackPanel> -->
-
-                <ListBox ItemsSource="{Binding ComparisonFolders}"
+                <ListBox IsVisible="{Binding ComparisonFolders.Count}" ItemsSource="{Binding ComparisonFolders}"
                          BorderBrush="Gray"
                          BorderThickness="1"
                          CornerRadius="4"
@@ -188,7 +128,8 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <ListBox ItemsSource="{Binding ComparisonFiles}"
+
+                <ListBox IsVisible="{Binding ComparisonFiles.Count}" ItemsSource="{Binding ComparisonFiles}"
                          BorderBrush="Gray"
                          BorderThickness="1"
                          CornerRadius="4"
@@ -218,26 +159,19 @@
                 </ListBox>
 
 
-
-
                 <CheckBox IsChecked="{Binding SaveHashCheckFilesInFolders}" Content="Оставлять файлы проверки хешей в переданных папках" />
 
                 <CheckBox IsChecked="{Binding SaveHashCheckFilesNearFiles}" Content="Оставлять файлы проверки хешей рядом с переданными файлами" />
 
                 <!-- <CheckBox IsChecked="{Binding ExcludeHashCheckFiles}" Content="Объединять файлы проверки хешей в одной папке" Margin="0,5,0,0" /> -->
 
-                <CheckBox IsChecked="{Binding SaveLogs}" Content="Сохранить лог" />
+                <CheckBox IsChecked="{Binding SaveLogs}" Content="Сохранить результат в истории" />
 
                 <!-- Проверять CanStartScan -->
                 <!-- IsEnabled="{Binding CanStartScan}" -->
                 <Button Content="Начать хеширование"
                         IsEnabled="{Binding CanStartScan}"
                         Command="{Binding StartScanCommand}"
-                        HorizontalAlignment="Center"
-                        Padding="20,10" />
-
-                <Button Content="Сравнить результаты"
-                        IsEnabled="{Binding CanStartScan}"
                         HorizontalAlignment="Center"
                         Padding="20,10" />
 

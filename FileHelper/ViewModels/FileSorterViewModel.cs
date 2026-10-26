@@ -52,14 +52,14 @@ public partial class FileSorterViewModel : ViewModelBase
     [ObservableProperty]
     public partial string SelectedFolder { get; set; } = "";
 
-    private bool CanSubmitFolder() => !string.IsNullOrWhiteSpace(SelectedFolder) && FoundFolder == true && !IsReadyForSorting;
+    private bool CanSubmitFolder() => !string.IsNullOrWhiteSpace(SelectedFolder) && FolderFound == true && !IsReadyForSorting;
     private bool CanSortFolder() => IsReadyForSorting;
 
     [ObservableProperty]
-    public partial bool? FoundFolder { get; set; } = null;
+    public partial bool? FolderFound { get; set; } = null;
 
-    public bool IsFolderValid => !string.IsNullOrWhiteSpace(SelectedFolder) && FoundFolder == true;
-    public bool IsFolderError => !string.IsNullOrWhiteSpace(SelectedFolder) && FoundFolder == false;
+    public bool IsFolderValid => !string.IsNullOrWhiteSpace(SelectedFolder) && FolderFound == true;
+    public bool IsFolderError => !string.IsNullOrWhiteSpace(SelectedFolder) && FolderFound == false;
 
     partial void OnSelectedFolderChanged(string value)
     {
@@ -67,21 +67,27 @@ public partial class FileSorterViewModel : ViewModelBase
 
         if (string.IsNullOrWhiteSpace(text))
         {
-            FoundFolder = null;
+            FolderFound = null;
             IsReadyForSorting = false;
         }
         else
         {
-            FoundFolder = Directory.Exists(text);
+            FolderFound = Directory.Exists(text);
             IsReadyForSorting = false;
+        }
+
+        if (FolderFound == true)
+        {
+            IsReadyForSorting = true;
         }
 
         OnPropertyChanged(nameof(IsFolderValid));
         OnPropertyChanged(nameof(IsFolderError));
-        SubmitFolderCommand.NotifyCanExecuteChanged();
+        // SubmitFolderCommand.NotifyCanExecuteChanged();
+        SortFolderCommand.NotifyCanExecuteChanged();
     }
 
-    partial void OnFoundFolderChanged(bool? value)
+    partial void OnFolderFoundChanged(bool? value)
     {
         OnPropertyChanged(nameof(IsFolderValid));
         OnPropertyChanged(nameof(IsFolderError));
@@ -185,28 +191,23 @@ public partial class FileSorterViewModel : ViewModelBase
         catch (InvalidOperationException ex)
         {
             CategoriesMessage = ex.Message;
+            return;
         }
         catch (IOException ex)
         {
             CategoriesMessage = $"Не удалось сохранить категории: {ex.Message}";
+            return;
         }
         catch (UnauthorizedAccessException ex)
         {
             CategoriesMessage = $"Нет доступа для сохранения категорий: {ex.Message}";
+            return;
         }
 
-
-        try
-
-        {
-            Categories.Clear();
-            foreach (var category in CategoriesSettings)
-                Categories.Add(category);
-        }
-        catch (Exception ex)
-        {
-            CategoriesMessage = $"Ошибка при обновлении категорий: {ex.Message}";
-        }
+        CategoriesMessage = "Категории сохранены.";
+        Categories.Clear();
+        foreach (var category in CategoriesSettings)
+            Categories.Add(category);
     }
 
 
@@ -240,7 +241,7 @@ public partial class FileSorterViewModel : ViewModelBase
         catch (Exception ex)
         {
             SelectedFolder = $"Ошибка: {ex.Message}";
-            FoundFolder = false;
+            FolderFound = false;
         }
     }
 }

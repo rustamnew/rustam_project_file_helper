@@ -41,9 +41,9 @@
                 </Border>
             </Grid>
 
-            <Button Content="Назначить папку"
-                    Command="{Binding SubmitFolderCommand}"
-                    Padding="20,10" />
+            <!-- <Button Content="Назначить папку"
+            Command="{Binding SubmitFolderCommand}"
+            Padding="20,10" /> -->
 
             <StackPanel Spacing="10" IsVisible="{Binding IsReadyForSorting}">
                 <!-- <ToggleSwitch OnContent="Рекурсивное прохождение"

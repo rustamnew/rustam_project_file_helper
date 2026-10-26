@@ -81,10 +81,12 @@
                             Command="{Binding RefreshHashHistoryCommand}"
                             Padding="10,6" />
                 </Grid>
+
                 <TextBlock Text="{Binding HistoryMessage}" Opacity="0.7" />
-                <ScrollViewer MaxHeight="280"
+
+                <!-- <ScrollViewer MaxHeight="280"
                               VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
+                              HorizontalScrollBarVisibility="Disabled"> -->
                     <ItemsControl ItemsSource="{Binding HashHistory}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:HashHistoryEntry">
@@ -92,14 +94,23 @@
                                         BorderThickness="1"
                                         CornerRadius="4"
                                         Margin="0,0,0,6">
-                                    <Expander Header="{Binding DateText}">
+                                    <Expander Header="{Binding DateText}" HorizontalAlignment="Stretch">
                                         <StackPanel Spacing="12" Margin="8">
+                                            <TextBlock Text="Папки" FontWeight="Bold" />
+
                                             <ItemsControl ItemsSource="{Binding Folders}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate x:DataType="vm:HashHistoryFolder">
-                                                        <Expander Header="{Binding FolderPath}">
+                                                        <Expander  HorizontalAlignment="Stretch">
+                                                            <Expander.Header>
+                                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                                    <TextBlock Text="{Binding FolderPath}" VerticalAlignment="Center" />
+                                                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center" />
+                                                                </StackPanel>
+                                                            </Expander.Header>
+
                                                             <StackPanel Spacing="6" Margin="8">
-                                                                <TextBlock Text="Файлы папки" FontWeight="SemiBold" />
+                                                                <!-- <TextBlock Text="Файлы папки" FontWeight="SemiBold" /> -->
                                                                 <ItemsControl ItemsSource="{Binding Files}">
                                                                     <ItemsControl.ItemTemplate>
                                                                         <DataTemplate x:DataType="vm:HashHistoryFile">
@@ -122,19 +133,25 @@
                                             </ItemsControl>
 
                                             <StackPanel Spacing="6" IsVisible="{Binding HasFiles}">
-                                                <TextBlock Text="Одиночные файлы" FontWeight="Bold" />
+                                                <TextBlock Text="Файлы" FontWeight="Bold" />
                                                 <ItemsControl ItemsSource="{Binding Files}">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate x:DataType="vm:HashHistoryFile">
-                                                            <StackPanel Spacing="2" Margin="8,0,0,6">
-                                                                <TextBlock Text="{Binding FilePath}"
-                                                                           TextWrapping="Wrap" />
-                                                                <TextBlock Text="{Binding Hash}"
-                                                                           FontFamily="Consolas"
-                                                                           FontSize="11"
-                                                                           Foreground="#2B7FFF"
-                                                                           TextWrapping="Wrap" />
+
+                                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                                <StackPanel Spacing="2" Margin="8,0,0,6">
+                                                                    <TextBlock Text="{Binding FilePath}"
+                                                                            TextWrapping="Wrap" />
+                                                                    <TextBlock Text="{Binding Hash}"
+                                                                            FontFamily="Consolas"
+                                                                            FontSize="11"
+                                                                            Foreground="#2B7FFF"
+                                                                            TextWrapping="Wrap" />
+                                                                </StackPanel>
+
+                                                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center" />
                                                             </StackPanel>
+                                                            
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
@@ -145,7 +162,26 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </ScrollViewer>
+                <!-- </ScrollViewer> -->
+            </StackPanel>
+
+            <StackPanel Spacing="6" IsVisible="{Binding SelectedHistoryItems.Count}">
+                <TextBlock Text="Выбрано для сравнения" FontWeight="Bold" />
+                <ItemsControl ItemsSource="{Binding SelectedHistoryItems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:HashHistorySelection">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                <Button Grid.Column="1"
+                                        Content="✕"
+                                        Command="{Binding $parent[UserControl].DataContext.RemoveSelectedHistoryItemCommand}"
+                                        CommandParameter="{Binding}"
+                                        Padding="6"
+                                        VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </StackPanel>
 
             <!-- Список добавленных файлов -->
@@ -261,6 +297,12 @@
                 Padding="8"
                 CornerRadius="4"
                 HorizontalAlignment="Center"/>
+            <Button
+                Content="Сравнить"
+                Command="{Binding CompareSelectedHistoryCommand}"
+                Padding="8"
+                CornerRadius="4"
+                HorizontalAlignment="Center"/>
 
             <StackPanel>
                 <CheckBox IsChecked="{Binding ShowFileFullPath}" Content="Отображать полный путь файлов" />
@@ -284,9 +326,12 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Spacing="10" MinWidth="250" MaxWidth="450">
+                                    <TextBlock Text="{Binding SourceFileName}"
+                                               FontWeight="Bold"
+                                               TextWrapping="Wrap" />
                                     <!-- <TextBlock Text="{Binding TotalFiles, StringFormat='Всего файлов: {0}'}" />
                                     <TextBlock Text="{Binding ProceccedFiles, StringFormat='Обработано: {0}'}" /> -->
-                                    <TextBlock Text="{Binding SingleFiles, StringFormat='Одиночные файлы: {0}'}" />
+                                    <TextBlock Text="{Binding SingleFiles, StringFormat='Уникальные файлы: {0}'}" />
                                     <TextBlock Text="{Binding HashMismatch, StringFormat='Несовпадающие хеши: {0}'}" />
                                     <TextBlock Text="{Binding HashConfirmed, StringFormat='Подтверждено: {0}'}" />
 
@@ -334,6 +379,10 @@
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate x:DataType="vm:HashFile">
                                                                 <StackPanel Spacing="2" Margin="8,4">
+                                                                    <TextBlock Text="{Binding SourceFileName, StringFormat='Источник: {0}'}"
+                                                                               FontSize="10"
+                                                                               Opacity="0.7"
+                                                                               TextWrapping="Wrap" />
                                                                     <SelectableTextBlock TextWrapping="Wrap" >
                                                                         <Run FontSize="12"
                                                                              Text="{Binding FilePath}">

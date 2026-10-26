@@ -9,8 +9,19 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace FileHelper.ViewModels;
 
+public partial class FoundItem : ObservableObject
+{
+    [ObservableProperty]
+    private string originalName = string.Empty;
+
+    [ObservableProperty]
+    private string replacedName = string.Empty;
+
+}
+
 public partial class FileRenamerViewModel : ViewModelBase
 {
+    public ObservableCollection<FoundItem> FoundItemsList { get; } = new();
     public ObservableCollection<string> FoundItems { get; } = new();
     public ObservableCollection<string> ReplacedItems { get; } = new();
 
@@ -152,7 +163,7 @@ public partial class FileRenamerViewModel : ViewModelBase
     public partial bool FlagFieldsExpanded { get; set; } = false;
 
     [ObservableProperty]
-    public partial bool? FoundFolder { get; set; } = null;
+    public partial bool? FolderFound { get; set; } = null;
 
     [ObservableProperty]
     public partial bool IsReadyForSearching { get; set; } = false;
@@ -178,10 +189,10 @@ public partial class FileRenamerViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool ShowFileLogs { get; set; } = false;
 
-    public bool IsFolderValid => !string.IsNullOrWhiteSpace(SelectedFolder) && FoundFolder == true;
-    public bool IsFolderError => !string.IsNullOrWhiteSpace(SelectedFolder) && FoundFolder == false;
+    public bool IsFolderValid => !string.IsNullOrWhiteSpace(SelectedFolder) && FolderFound == true;
+    public bool IsFolderError => !string.IsNullOrWhiteSpace(SelectedFolder) && FolderFound == false;
 
-    private bool CanSubmitFolder() => !string.IsNullOrWhiteSpace(SelectedFolder) && FoundFolder == true && !IsReadyForSearching;
+    // private bool CanSubmitFolder() => !string.IsNullOrWhiteSpace(SelectedFolder) && FolderFound == true && !IsReadyForSearching;
     private bool CanSearchFolder() => IsReadyForSearching;
     private bool CanRenameFile() => FoundItems.Count > 0 && !IsRenaming;
     private bool CanRenameFiles() => FoundItems.Count > 0 && !IsRenaming;
@@ -192,42 +203,49 @@ public partial class FileRenamerViewModel : ViewModelBase
 
         if (string.IsNullOrWhiteSpace(text))
         {
-            FoundFolder = null;
+            FolderFound = null;
             IsReadyForSearching = false;
         }
         else
         {
-            FoundFolder = Directory.Exists(text);
+            FolderFound = Directory.Exists(text);
             IsReadyForSearching = false;
+        }
+
+        if (FolderFound == true)
+        {
+            IsReadyForSearching = true;
         }
 
         OnPropertyChanged(nameof(IsFolderValid));
         OnPropertyChanged(nameof(IsFolderError));
-        SubmitFolderCommand.NotifyCanExecuteChanged();
+        // SubmitFolderCommand.NotifyCanExecuteChanged();
+
+
     }
 
-    partial void OnFoundFolderChanged(bool? value)
+    partial void OnFolderFoundChanged(bool? value)
     {
         OnPropertyChanged(nameof(IsFolderValid));
         OnPropertyChanged(nameof(IsFolderError));
-        SubmitFolderCommand.NotifyCanExecuteChanged();
+        // SubmitFolderCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnIsReadyForSearchingChanged(bool value)
     {
-        SubmitFolderCommand.NotifyCanExecuteChanged();
+        // SubmitFolderCommand.NotifyCanExecuteChanged();
         SearchFolderCommand.NotifyCanExecuteChanged();
     }
 
-    [RelayCommand(CanExecute = nameof(CanSubmitFolder))]
-    private void SubmitFolder()
+    // [RelayCommand(CanExecute = nameof(CanSubmitFolder))]
+    /*private void SubmitFolder()
     {
         if (IsReadyForSearching)
             return;
 
         IsReadyForSearching = true;
-        SearchFilesInFolder(FindQuery, SelectedFolder);
-    }
+        // SearchFilesInFolder(FindQuery, SelectedFolder);
+    }*/
 
     [RelayCommand(CanExecute = nameof(CanSearchFolder))]
     public async Task SearchFolder()
@@ -379,7 +397,7 @@ public partial class FileRenamerViewModel : ViewModelBase
         catch (Exception ex)
         {
             SelectedFolder = $"Ошибка: {ex.Message}";
-            FoundFolder = false;
+            FolderFound = false;
         }
     }
 

@@ -171,8 +171,9 @@ namespace MyAvaloniaApp.Services
 
             // Начинаем сортировку файлов и папок
             Console.WriteLine();
-            string newFolderPath = Path.Combine(folderPath, DateTime.Now.ToString("dd-MM-yyyy_HH-mm-ss"));
-            Directory.CreateDirectory(newFolderPath);
+            // string newFolderPath = Path.Combine(folderPath, DateTime.Now.ToString("dd-MM-yyyy_HH-mm-ss"));
+            // Directory.CreateDirectory(newFolderPath);
+            string newFolderPath = folderPath;
 
 
             foreach (var (category, filesInCategory) in categoryFiles)

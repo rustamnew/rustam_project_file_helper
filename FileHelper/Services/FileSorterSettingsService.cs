@@ -47,6 +47,7 @@ public class FileSorterSettingsService
     {
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var normalizedExtensions = new Dictionary<FileSortCategory, string>();
         var reservedNames = new HashSet<string>(["Другое", "Папки"], StringComparer.OrdinalIgnoreCase);
         var invalidFileNameCharacters = Path.GetInvalidFileNameChars();
 
@@ -83,12 +84,22 @@ public class FileSorterSettingsService
                 throw new InvalidOperationException($"Имя категории «{name}» зарезервировано или уже используется.");
             }
 
+            var extensionTokens = category.Extensions
+                .Split([',', ';', ' ', '\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (extensionTokens.Length == 0 || extensionTokens.Any(token => !IsValidExtensionToken(token)))
+            {
+                category.HasExtensionsError = true;
+                throw new InvalidOperationException($"Укажите допустимые расширения в категории «{name}» (например, .txt, .pdf).");
+            }
+
             var categoryExtensions = GetExtensions(category);
             if (categoryExtensions.Length == 0)
             {
                 category.HasExtensionsError = true;
                 throw new InvalidOperationException($"Добавьте хотя бы одно расширение в категорию «{name}».");
             }
+
+            normalizedExtensions[category] = string.Join(", ", categoryExtensions);
 
             foreach (var extension in categoryExtensions)
             {
@@ -104,6 +115,20 @@ public class FileSorterSettingsService
         var lines = categories.Select(category =>
             $"{category.Name.Trim()};{string.Join(", ", GetExtensions(category))};{(category.IsEnabled ? "1" : "0")}");
         File.WriteAllLines(SettingsPath, lines);
+
+        foreach (var (category, value) in normalizedExtensions)
+        {
+            category.Extensions = value;
+        }
+            
+    }
+
+    private static bool IsValidExtensionToken(string token)
+    {
+        var extension = token.TrimStart('.');
+        return extension.Length > 0 &&
+            extension.Any(char.IsLetter) &&
+            extension.All(character => char.IsLetterOrDigit(character) || character is '.' or '_' or '-' or '+');
     }
 
     public static string[] GetExtensions(FileSortCategory category) => category.Extensions

@@ -45,9 +45,9 @@
                 </Border>
             </Grid>
 
-            <Button Content="Назначить папку"
-                    Command="{Binding SubmitFolderCommand}"
-                    Padding="20,10" />
+            <!-- <Button Content="Назначить папку"
+            Command="{Binding SubmitFolderCommand}"
+            Padding="20,10" /> -->
 
             <StackPanel Spacing="10" IsVisible="{Binding IsReadyForSearching}">
                 <CheckBox IsChecked="{Binding FlagMatchCase}" Content="С учётом регистра" />
@@ -268,9 +268,9 @@
             </Border>
 
             <!-- IsVisible="{Binding IsReadyForSearching}" -->
-            <StackPanel Spacing="10" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Top" >
-
-                <Border  Margin="5,5,0,5" BorderBrush="Gray" BorderThickness="1" CornerRadius="4" MaxWidth="580">
+            <!-- <StackPanel Spacing="10" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Top" > -->
+            <Grid ColumnDefinitions="*, *">
+                <Border Grid.Column="0" HorizontalAlignment="Stretch" IsVisible="{Binding FoundItems.Count}"  Margin="5,5,0,5" BorderBrush="Gray" BorderThickness="1" CornerRadius="4">
                     <ListBox ItemsSource="{Binding FoundItems}" MaxHeight="160" Background="Transparent">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
@@ -297,25 +297,28 @@
                     </ListBox>
                 </Border>
 
-                <Border Margin="5,5,0,5" BorderBrush="Gray" BorderThickness="1" CornerRadius="4" MaxWidth="280">
-                    <ListBox ItemsSource="{Binding ReplacedItems}" MaxHeight="160" Background="Transparent">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <!-- <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" /> -->
+                <Grid Grid.Column="1" HorizontalAlignment="Stretch" IsVisible="{Binding FlagFieldsExpanded}">
+                    <Border IsVisible="{Binding ReplacedItems.Count}" Margin="5,5,0,5" BorderBrush="Gray" BorderThickness="1" CornerRadius="4">
+                        <ListBox ItemsSource="{Binding ReplacedItems}" MaxHeight="160" Background="Transparent">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" /> -->
 
-                                <views:HighlightingTextBlock
-                                    Text="{Binding Converter={StaticResource FileNameFromPathConverter}}"
-                                    SearchText="{Binding DataContext.ReplaceQuery, ElementName=Root}"
-                                    TextBrush="Blue"
-                                    MatchBrush="Red"
-                                    Background="LightGray"
-                                    MatchBackgroundBrush="#3355FF88"
-                                    TextTrimming="CharacterEllipsis" />
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Border>
-            </StackPanel>
+                                    <views:HighlightingTextBlock
+                                        Text="{Binding Converter={StaticResource FileNameFromPathConverter}}"
+                                        SearchText="{Binding DataContext.ReplaceQuery, ElementName=Root}"
+                                        TextBrush="Blue"
+                                        MatchBrush="Red"
+                                        Background="LightGray"
+                                        MatchBackgroundBrush="#3355FF88"
+                                        TextTrimming="CharacterEllipsis" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+                </Grid>
+            </Grid>
+                <!-- </StackPanel> -->
 
 
         </StackPanel>

@@ -33,6 +33,8 @@ public partial class HashFile : ObservableObject
 {
     public string FileName { get; set; } = string.Empty;
     public string FilePath { get; set; } = string.Empty;
+    public string SourceFileName { get; set; } = string.Empty;
+    public string SourceFilePath { get; set; } = string.Empty;
     public string FileSize { get; set; } = string.Empty;
     public string FileHash { get; set; } = string.Empty;
     public int FoundFiles { get; set; }
@@ -45,6 +47,7 @@ public partial class HashFile : ObservableObject
 }
 public partial class ComparisonResult : ObservableObject
 {
+    public string SourceFileName { get; set; } = string.Empty;
     // public int TotalFiles { get; set; } = 0;
     // public int ProceccedFiles { get; set; } = 0;
     public int HashConfirmed { get; set; } = 0;
@@ -54,16 +57,30 @@ public partial class ComparisonResult : ObservableObject
     public List<HashFile> FileList { get; set; } = new();
 }
 
-public class HashHistoryFile
+public partial class HashHistoryFile : ObservableObject
 {
     public string FilePath { get; set; } = string.Empty;
     public string Hash { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool IsSelected { get; set; }
 }
 
-public class HashHistoryFolder
+public partial class HashHistoryFolder : ObservableObject
 {
     public string FolderPath { get; set; } = string.Empty;
     public ObservableCollection<HashHistoryFile> Files { get; } = new();
+
+    [ObservableProperty]
+    public partial bool IsSelected { get; set; }
+}
+
+public class HashHistorySelection
+{
+    public object Source { get; init; } = null!;
+    public string Name { get; init; } = string.Empty;
+    public string SourcePath { get; init; } = string.Empty;
+    public IReadOnlyList<HashHistoryFile> Files { get; init; } = Array.Empty<HashHistoryFile>();
 }
 
 public class HashHistoryEntry
@@ -76,6 +93,8 @@ public class HashHistoryEntry
 
 public partial class FileHashReaderViewModel : ViewModelBase
 {
+    private bool _isHistoryComparison;
+
     public FileHashReaderViewModel()
     {
         RefreshHashHistory();
@@ -86,6 +105,14 @@ public partial class FileHashReaderViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool ShowFileFullPath { get; set; } = false;
+
+    partial void OnShowFileFullPathChanged(bool value)
+    {
+        if (_isHistoryComparison)
+            CompareSelectedHistory();
+        else
+            ShowFileHash();
+    }
 
     // [ObservableProperty]
     // public partial bool ShowFileSize { get; set; } = false;
@@ -98,6 +125,8 @@ public partial class FileHashReaderViewModel : ViewModelBase
     public ObservableCollection<ComparisonResult> ComparisonResult { get; } = new();
 
     public ObservableCollection<HashHistoryEntry> HashHistory { get; } = new();
+
+    public ObservableCollection<HashHistorySelection> SelectedHistoryItems { get; } = new();
 
     [ObservableProperty]
     public partial string HistoryMessage { get; set; } = string.Empty;
@@ -194,13 +223,35 @@ public partial class FileHashReaderViewModel : ViewModelBase
             }
 
             if (currentEntry != null)
+            {
                 parsedHistory.Add(currentEntry);
+            }
+                
+            if (parsedHistory.Count > 0)
+            {
+                parsedHistory.Reverse();
+            }
 
             foreach (var historyEntry in parsedHistory)
+            {
+                foreach (var folder in historyEntry.Folders)
+                {
+                    folder.PropertyChanged += OnHistorySelectionChanged;
+                }
+
+                foreach (var file in historyEntry.Files)
+                {
+                    file.PropertyChanged += OnHistorySelectionChanged;
+                }
+
                 HashHistory.Add(historyEntry);
+            }
 
             if (HashHistory.Count == 0)
+            {
                 HistoryMessage = "В журнале нет записей о хешировании.";
+            }
+                
         }
         catch (Exception ex)
         {
@@ -212,6 +263,65 @@ public partial class FileHashReaderViewModel : ViewModelBase
     private static bool IsSha256(string value)
     {
         return value.Length == 64 && value.All(Uri.IsHexDigit);
+    }
+
+    private void OnHistorySelectionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(HashHistoryFile.IsSelected) &&
+            e.PropertyName != nameof(HashHistoryFolder.IsSelected))
+        {
+            return;
+        }
+
+        if (sender is HashHistoryFolder folder)
+        {
+            var selectedItem = SelectedHistoryItems.FirstOrDefault(item => ReferenceEquals(item.Source, folder));
+            if (folder.IsSelected && selectedItem == null)
+            {
+                SelectedHistoryItems.Add(new HashHistorySelection
+                {
+                    Source = folder,
+                    Name = folder.FolderPath,
+                    SourcePath = folder.FolderPath,
+                    Files = folder.Files.ToList()
+                });
+            }
+            else if (!folder.IsSelected && selectedItem != null)
+            {
+                SelectedHistoryItems.Remove(selectedItem);
+            }
+        }
+        else if (sender is HashHistoryFile file)
+        {
+            var selectedItem = SelectedHistoryItems.FirstOrDefault(item => ReferenceEquals(item.Source, file));
+            if (file.IsSelected && selectedItem == null)
+            {
+                SelectedHistoryItems.Add(new HashHistorySelection
+                {
+                    Source = file,
+                    Name = file.FilePath,
+                    SourcePath = file.FilePath,
+                    Files = new[] { file }
+                });
+            }
+            else if (!file.IsSelected && selectedItem != null)
+            {
+                SelectedHistoryItems.Remove(selectedItem);
+            }
+        }
+
+        CompareSelectedHistoryCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand]
+    private void RemoveSelectedHistoryItem(HashHistorySelection item)
+    {
+        SelectedHistoryItems.Remove(item);
+
+        if (item.Source is HashHistoryFolder folder)
+            folder.IsSelected = false;
+        else if (item.Source is HashHistoryFile file)
+            file.IsSelected = false;
     }
 
 
@@ -226,6 +336,14 @@ public partial class FileHashReaderViewModel : ViewModelBase
     [RelayCommand]
     public void ShowFileHash()
     {
+        _isHistoryComparison = false;
+        var expandedRows = ComparisonResult
+            .SelectMany(result => result.FileList)
+            .GroupBy(file => (file.SourceFilePath, file.FilePath, file.FileHash))
+            .ToDictionary(
+                group => group.Key,
+                group => new Queue<bool>(group.Select(file => file.IsRelatedFilesVisible)));
+
         ComparisonResult.Clear();
         var results = new List<ComparisonResult>();
 
@@ -235,13 +353,19 @@ public partial class FileHashReaderViewModel : ViewModelBase
             parsedFiles = parsedFiles./*OrderBy(item => item.Hash).*/ToList();
             var result = new ComparisonResult
             {
+                SourceFileName = ShowFileFullPath ? file.FilePath : Path.GetFileName(file.FilePath),
                 // TotalFiles = parsedFiles.Count,
                 // ProceccedFiles = parsedFiles.Count,
                 FileList = parsedFiles.Select(parsedFile => new HashFile
                 {
                     FileName = ShowFileFullPath ? parsedFile.FullPath : parsedFile.FileName,
                     FilePath = parsedFile.FullPath,
+                    SourceFileName = ShowFileFullPath ? file.FilePath : Path.GetFileName(file.FilePath),
+                    SourceFilePath = file.FilePath,
                     FileHash = parsedFile.Hash,
+                    IsRelatedFilesVisible = expandedRows.TryGetValue(
+                        (file.FilePath, parsedFile.FullPath, parsedFile.Hash),
+                        out var rowStates) && rowStates.Count > 0 && rowStates.Dequeue(),
                     FileSize = File.Exists(parsedFile.FullPath)
                         ? new FileInfo(parsedFile.FullPath).Length.ToString()
                         : string.Empty
@@ -251,6 +375,11 @@ public partial class FileHashReaderViewModel : ViewModelBase
             results.Add(result);
         }
 
+        CalculateResultCounts(results);
+    }
+
+    private void CalculateResultCounts(List<ComparisonResult> results)
+    {
         var allFiles = results.SelectMany(result => result.FileList).ToList();
         foreach (var file in allFiles)
         {
@@ -272,7 +401,7 @@ public partial class FileHashReaderViewModel : ViewModelBase
             /*result.HashConfirmed = result.FileList.Count(file =>
                 file.FoundFiles == file.ConfirmedFiles && file.FoundFiles > 1);*/
             result.HashConfirmed = result.FileList
-                .Where(file => file.FoundFiles == file.ConfirmedFiles)
+                .Where(file => file.FoundFiles > 0 && file.FoundFiles == file.ConfirmedFiles)
                 .Select(file => GetBaseFileName(file.FileName))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Count();
@@ -307,6 +436,45 @@ public partial class FileHashReaderViewModel : ViewModelBase
         }
     }
 
+    private bool CanCompareSelectedHistory => SelectedHistoryItems.Count >= 2;
+
+    [RelayCommand(CanExecute = nameof(CanCompareSelectedHistory))]
+    private void CompareSelectedHistory()
+    {
+        _isHistoryComparison = true;
+        var results = SelectedHistoryItems.Select(item => new ComparisonResult
+        {
+            SourceFileName = ShowFileFullPath
+                ? item.SourcePath
+                : Path.GetFileName(Path.TrimEndingDirectorySeparator(item.SourcePath)),
+            FileList = item.Files.Select(file => new HashFile
+            {
+                FileName = ShowFileFullPath
+                    ? GetHistoryFileFullPath(item, file)
+                    : Path.GetFileName(file.FilePath),
+                FilePath = ShowFileFullPath
+                    ? GetHistoryFileFullPath(item, file)
+                    : file.FilePath,
+                SourceFileName = ShowFileFullPath
+                    ? item.SourcePath
+                    : Path.GetFileName(Path.TrimEndingDirectorySeparator(item.SourcePath)),
+                SourceFilePath = item.SourcePath,
+                FileHash = file.Hash
+            }).ToList()
+        }).ToList();
+
+        ComparisonResult.Clear();
+        CalculateResultCounts(results);
+    }
+
+    private static string GetHistoryFileFullPath(HashHistorySelection item, HashHistoryFile file)
+    {
+        if (Path.IsPathRooted(file.FilePath) || item.Source is not HashHistoryFolder)
+            return file.FilePath;
+
+        return Path.GetFullPath(Path.Combine(item.SourcePath, file.FilePath));
+    }
+
     private static string GetBaseFileName(string path)
     {
         return Path.GetFileName(path.Replace('\\', '/'));
@@ -326,6 +494,9 @@ public partial class FileHashReaderViewModel : ViewModelBase
     [RelayCommand]
     public async Task ClearFileHashHistory()
     {
+        if (!await ConfirmClearHistoryAsync())
+            return;
+
         string applicationDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         string historyFolder = Path.Combine(applicationDataFolder, "FileHelper");
         Directory.CreateDirectory(historyFolder);
@@ -334,6 +505,63 @@ public partial class FileHashReaderViewModel : ViewModelBase
 
         // File.WriteAllText(historyPath, "");
         await File.WriteAllTextAsync(historyPath, "");
+    }
+
+    private static async Task<bool> ConfirmClearHistoryAsync()
+    {
+        if (Avalonia.Application.Current?.ApplicationLifetime is not Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop ||
+            desktop.MainWindow == null)
+        {
+            return false;
+        }
+
+        var cancelButton = new Avalonia.Controls.Button
+        {
+            Content = "Отмена",
+            IsCancel = true,
+            IsDefault = true
+        };
+        var deleteButton = new Avalonia.Controls.Button
+        {
+            Content = "Удалить"
+        };
+        var confirmationWindow = new Avalonia.Controls.Window
+        {
+            Title = "Очистить историю?",
+            Width = 360,
+            SizeToContent = Avalonia.Controls.SizeToContent.Height,
+            CanResize = false,
+            WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+            Content = new Avalonia.Controls.StackPanel
+            {
+                Spacing = 16,
+                Margin = new Avalonia.Thickness(20),
+                Children =
+                {
+                    new Avalonia.Controls.TextBlock
+                    {
+                        Text = "История хеширования будет удалена. Продолжить?",
+                        TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                    },
+                    new Avalonia.Controls.StackPanel
+                    {
+                        Orientation = Avalonia.Layout.Orientation.Horizontal,
+                        Spacing = 8,
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                        Children =
+                        {
+                            cancelButton,
+                            deleteButton
+                        }
+                    }
+                }
+            }
+        };
+
+        cancelButton.Click += (_, _) => confirmationWindow.Close(false);
+        deleteButton.Click += (_, _) => confirmationWindow.Close(true);
+
+        return await confirmationWindow.ShowDialog<bool>(desktop.MainWindow);
     }
 
 

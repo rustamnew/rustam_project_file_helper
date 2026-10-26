@@ -136,6 +136,15 @@ public partial class FileArchiveSearcherViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    public void Clear()
+    {
+        FilesToFind.Clear();
+        Archives.Clear();
+        Results.Clear();
+        Message = string.Empty;
+        OnPropertyChanged(nameof(CanSearch));
+    }
     private static TopLevel? GetMainWindow() =>
         Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
             ? desktop.MainWindow

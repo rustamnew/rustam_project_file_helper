@@ -11,6 +11,7 @@
             <StackPanel Orientation="Horizontal" Spacing="10">
                 <Button Content="Добавить файлы" Command="{Binding AddFilesCommand}" Padding="16,8" />
                 <Button Content="Добавить архивы" Command="{Binding AddArchivesCommand}" Padding="16,8" />
+                <Button Content="Очистить" Command="{Binding ClearCommand}" Padding="16,8" />
             </StackPanel>
 
             <Grid ColumnDefinitions="*,*" ColumnSpacing="16">

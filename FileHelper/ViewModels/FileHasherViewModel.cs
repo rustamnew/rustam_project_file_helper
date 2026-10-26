@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
@@ -38,6 +39,13 @@ public class FolderHashResults
     public string path { get; set; } = string.Empty;
     public string hash = string.Empty;
 }*/
+
+public class DirectoryContent
+{
+    public string DirectoryPath { get; set; } = string.Empty;
+    public ObservableCollection<FileResult> Files { get; } = new();
+}
+
 
 internal class ScanProgress
 {
@@ -90,8 +98,10 @@ public partial class FileHasherViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool SaveHashCheckFilesInFolders { get; set; } = false;
+
     [ObservableProperty]
     public partial bool SaveHashCheckFilesNearFiles { get; set; } = false;
+
 
 
     // [ObservableProperty]
@@ -300,7 +310,6 @@ public partial class FileHasherViewModel : ViewModelBase
 
     partial void OnIsReadyForHashingChanged(bool value)
     {
-        // SubmitFolderCommand.NotifyCanExecuteChanged();
         StartScanCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(CanStartScan));
     }
@@ -407,55 +416,44 @@ public partial class FileHasherViewModel : ViewModelBase
 
 
         // Ждём выполнения всех задач параллельно
-        await Task.WhenAll(tasks);
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            Message = $"Ошибка сканирования: {ex.Message}";
+            LogMessage = $"Ошибка сканирования: {ex}\n" + LogMessage;
+            IsHashing = false;
+            return;
+        }
 
         // Запись файла с результатами
 
         try
         {
-            List<FileResult> finalResult = new List<FileResult>();
-
-            string resultString = string.Empty;
-
+            var addedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var resultBuilder = new StringBuilder();
             string resultsFileNamePath = Path.Combine(ResultLocation, hashResultsFileName);
 
             foreach (var folderResult in ComparisonFoldersResults)
             {
-                // string resultsFileNamePath = Path.Combine(folderResult.FolderPath, hashResultsFileName);
-
                 foreach (var result in folderResult.Results)
                 {
-                    bool hasDuplicat = finalResult.Any(item => item.Path == result.Path);
-                    if (hasDuplicat)
-                    {
+                    if (!addedPaths.Add(result.Path))
                         continue;
-                    }
-                    finalResult.Add(new FileResult
-                    {
-                        Path = result.Path,
-                        Hash = result.Hash
-                    });
+
+                    AppendResult(resultBuilder, result);
                 }
             }
             foreach (var fileResult in ComparisonFilesResults)
             {
-                bool hasDuplicat = finalResult.Any(item => item.Path == fileResult.Path);
-                if (hasDuplicat)
-                {
+                if (!addedPaths.Add(fileResult.Path))
                     continue;
-                }
-                finalResult.Add(new FileResult
-                {
-                    Path = fileResult.Path,
-                    Hash = fileResult.Hash
-                });
-            }
 
-            foreach (var result in finalResult)
-            {
-                // await writer.WriteLineAsync($"Хэш SHA256 {result.RelativePath}\n{result.Hash}\n");
-                ResultFinal += $"Хэш SHA256 {result.Path}\n{result.Hash}\n\n";
+                AppendResult(resultBuilder, fileResult);
             }
+            ResultFinal = resultBuilder.ToString();
 
             // Сохранение истории логов
             if (SaveLogs)
@@ -514,6 +512,102 @@ public partial class FileHasherViewModel : ViewModelBase
                 await writer.WriteLineAsync(ResultFinal);
             }
 
+            if (SaveHashCheckFilesInFolders)
+            {
+                foreach (var folderResult in ComparisonFoldersResults)
+                {
+                    try
+                    {
+                        var folderResultsPath = Path.Combine(folderResult.FolderPath, hashResultsFileName);
+                        var folderResultContent = string.Join(
+                            Environment.NewLine + Environment.NewLine,
+                            folderResult.Results.Select(result =>
+                                $"Хэш SHA256 {result.Path}{Environment.NewLine}{result.Hash}"));
+
+                        await File.WriteAllTextAsync(folderResultsPath, folderResultContent + Environment.NewLine);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogMessage = $"Ошибка при сохранении файла хешей в папке {folderResult.FolderPath}: {ex.Message}\n" + LogMessage;
+                    }
+                }
+            }
+            if (SaveHashCheckFilesNearFiles)
+            {
+                var listDirectories = new List<DirectoryContent>();
+
+                foreach (var fileResult in ComparisonFilesResults)
+                {
+                    try
+                    {
+                        var fileDirectory = Path.GetDirectoryName(fileResult.Path);
+                        if (string.IsNullOrEmpty(fileDirectory))
+                        {
+                            fileDirectory = ".";
+                        }
+
+                        // 1. Нормализуем путь директории файла для надежного сравнения
+                        string normalizedFileDir = Path.GetFullPath(fileDirectory)
+                            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+                        // 2. Проверяем, есть ли эта папка уже в результатах сканирования целых папок
+                        bool isFolderAlreadyProcessed = ComparisonFoldersResults.Any(fr =>
+                        {
+                            string normalizedFolder = Path.GetFullPath(fr.FolderPath)
+                                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+                            return string.Equals(normalizedFolder, normalizedFileDir, StringComparison.OrdinalIgnoreCase);
+                        });
+
+                        if (isFolderAlreadyProcessed)
+                        {
+                            // Пропускаем файл, так как его папка уже была добавлена для хеширования целиком.
+                            // Хеш-файл для этой папки будет создан в блоке SaveHashCheckFilesInFolders.
+                            continue;
+                        }
+
+                        // 3. Если папка не была обработана целиком, ищем или создаем запись для нее
+                        var existingDir = listDirectories.FirstOrDefault(dc =>
+                            string.Equals(
+                                Path.GetFullPath(dc.DirectoryPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                                normalizedFileDir,
+                                StringComparison.OrdinalIgnoreCase));
+
+                        if (existingDir == null)
+                        {
+                            existingDir = new DirectoryContent { DirectoryPath = fileDirectory }; // Сохраняем оригинальный путь для записи
+                            listDirectories.Add(existingDir);
+                        }
+
+                        existingDir.Files.Add(fileResult);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogMessage = $"Ошибка при обработке файла для сохранения хеша рядом с файлом {fileResult.Path}: {ex.Message}\n" + LogMessage;
+                    }
+                }
+
+                // 4. Сохраняем файлы хешей для тех директорий, которые не были обработаны целиком
+                foreach (var directoryContent in listDirectories)
+                {
+                    var fileResultsPath = Path.Combine(directoryContent.DirectoryPath, hashResultsFileName);
+                    try
+                    {
+                        // Собираем содержимое всех файлов в этой директории в одну строку
+                        var fileResultContent = string.Join(
+                            Environment.NewLine + Environment.NewLine,
+                            directoryContent.Files.Select(file => $"Хэш SHA256 {file.Path}{Environment.NewLine}{file.Hash}"));
+
+                        // Записываем всё за один раз (быстрее и надежнее, чем AppendAllText в цикле)
+                        await File.WriteAllTextAsync(fileResultsPath, fileResultContent + Environment.NewLine);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogMessage = $"Ошибка при сохранении файла хешей рядом с файлами в папке {directoryContent.DirectoryPath}: {ex.Message}\n" + LogMessage;
+                    }
+                }
+            }
+
             OpenFileInEditor(resultsFileNamePath);
 
             ResultReady = true;
@@ -540,6 +634,14 @@ public partial class FileHasherViewModel : ViewModelBase
         IsHashing = false;
     }
 
+    private static void AppendResult(StringBuilder builder, FileResult result)
+    {
+        builder.Append("Хэш SHA256 ")
+            .AppendLine(result.Path)
+            .AppendLine(result.Hash)
+            .AppendLine();
+    }
+
     private static async Task ScanDirectoryAsync(
             string rootPath,
             string folderPath,
@@ -552,22 +654,31 @@ public partial class FileHasherViewModel : ViewModelBase
             IProgress<string>? logger,
             bool excludeHashCheckFiles = false)
     {
-        foreach (string file in Directory.GetFiles(folderPath))
+        try
         {
-            if (excludeHashCheckFiles && Path.GetFileName(file).StartsWith("hash_check_"))
+            foreach (string file in Directory.EnumerateFiles(folderPath))
             {
-                continue;
-            }
-            else
-            {
+                if (excludeHashCheckFiles && Path.GetFileName(file).StartsWith("hash_check_"))
+                    continue;
+
                 await ProcessFileAsync(file, rootPath, results, scanProgress, cancellationToken, limitMbPerSec, storageType, progress, logger, excludeHashCheckFiles);
             }
-
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            logger?.Report($"Не удалось прочитать файлы в папке {folderPath}: {ex.Message}");
         }
 
-        foreach (string directory in Directory.GetDirectories(folderPath))
+        try
         {
-            await ScanDirectoryAsync(rootPath, directory, results, scanProgress, cancellationToken, limitMbPerSec, storageType, progress, logger, excludeHashCheckFiles);
+            foreach (string directory in Directory.EnumerateDirectories(folderPath))
+            {
+                await ScanDirectoryAsync(rootPath, directory, results, scanProgress, cancellationToken, limitMbPerSec, storageType, progress, logger, excludeHashCheckFiles);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            logger?.Report($"Не удалось прочитать вложенные папки в {folderPath}: {ex.Message}");
         }
     }
 
@@ -598,19 +709,30 @@ public partial class FileHasherViewModel : ViewModelBase
 
     private static int CountFilesRecursive(string folderPath)
     {
+        int count = 0;
         try
         {
-            int count = Directory.GetFiles(folderPath).Length;
-            foreach (string directory in Directory.GetDirectories(folderPath))
+            foreach (string _ in Directory.EnumerateFiles(folderPath))
+                count++;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            Debug.WriteLine($"Не удалось посчитать файлы в {folderPath}: {ex.Message}");
+        }
+
+        try
+        {
+            foreach (string directory in Directory.EnumerateDirectories(folderPath))
             {
                 count += CountFilesRecursive(directory);
             }
-            return count;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
-            return 0;
+            Debug.WriteLine($"Не удалось получить вложенные папки в {folderPath}: {ex.Message}");
         }
+
+        return count;
     }
 
 
@@ -635,35 +757,27 @@ public partial class FileHasherViewModel : ViewModelBase
 
             var fileProgress = new Progress<(long read, long total, double speed)>((info) =>
             {
-                logger?.Report($"Файл: {Path.GetFileName(filePath)} - {(info.read * 100 / info.total):F1}% ({info.speed:F2} мб/с)");
+                double percentage = info.total > 0 ? info.read * 100.0 / info.total : 100.0;
+                logger?.Report($"Файл: {Path.GetFileName(filePath)} - {percentage:F1}% ({info.speed:F2} мб/с)");
                 // logger?.Report($"Файл: {Path.GetFileName(filePath)} - {(info.total / 1024.0 / 1024.0):F2} МБ");
             });
 
             string relativePath = Path.GetRelativePath(rootPath, filePath);
 
-            results.Add(new FileResult
+            var result = new FileResult
             {
                 RelativePath = relativePath,
                 Path = filePath,
-                // Hash = string.Empty, // Хеш будет вычислен позже
                 Hash = "Загрузка...",
                 SizeInBytes = bytes
-            });
+            };
+            results.Add(result);
 
             var hasher = limitMbPerSec > 0 ? new ThrottledFileHasher(limitMbPerSec) : new ThrottledFileHasher();
             string hash = await hasher.HashFileWithThrottleAsync(filePath, storageType, fileProgress, cancellationToken);
 
 
-            // Обновляем хеш для последнего добавленного элемента //TODO ПЕРЕДЕЛАТЬ
-            results.RemoveAt(results.Count - 1);
-
-            results.Add(new FileResult
-            {
-                RelativePath = relativePath,
-                Path = filePath,
-                Hash = hash,
-                SizeInBytes = bytes
-            });
+            result.Hash = hash;
 
             scanProgress.ProcessedFiles++;
             if (scanProgress.TotalFiles > 0)
@@ -698,7 +812,8 @@ public partial class FileHasherViewModel : ViewModelBase
 
             var fileProgress = new Progress<(long read, long total, double speed)>((info) =>
             {
-                logger?.Report($"Файл: {Path.GetFileName(filePath)} - {(info.read * 100 / info.total):F1}% ({info.speed:F2} мб/с)");
+                double percentage = info.total > 0 ? info.read * 100.0 / info.total : 100.0;
+                logger?.Report($"Файл: {Path.GetFileName(filePath)} - {percentage:F1}% ({info.speed:F2} мб/с)");
                 // logger?.Report($"Файл: {Path.GetFileName(filePath)} - {(info.total / 1024.0 / 1024.0):F2} МБ");
             });
 
